@@ -1,0 +1,8 @@
+#pocket-intro{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(12px,3vh,30px);padding:20px;text-align:center;background:linear-gradient(174deg,#fff 65%,#edfaff 88%,#d6f2ff);color:#123b77;font-family:system-ui,sans-serif;overflow:auto}
+#pocket-intro .word{width:min(88vw,760px);aspect-ratio:2172/724;position:relative;mix-blend-mode:multiply}
+.word .part{position:absolute;inset:0;background:url(dora-wordmark.png) center/100% 100% no-repeat;clip-path:inset(0 var(--right) 0 var(--left));animation:intro-show .42s var(--delay) both}
+#pocket-intro p{margin:0}.pocket-tag{font-size:clamp(18px,3vw,27px);font-weight:700;animation:intro-show .6s 1.65s both}
+.pocket-verse{line-height:1.65;animation:intro-show .7s 2.15s both}.pocket-verse small{display:block}.pocket-blessing{animation:intro-show .65s 2.7s both}
+#intro-skip{position:absolute;right:18px;bottom:max(18px,env(safe-area-inset-bottom));background:white;border:1px solid #b4d2e2;border-radius:22px;color:#234b65;padding:9px 16px}
+@keyframes intro-show{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){#pocket-intro *{animation:none!important}}
