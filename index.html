@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
-<script src="config.js?v=20261120-1"></script>
+<script src="config.js?v=20261120-2"></script>
 <style>
 :root{color-scheme:light dark;--bg:light-dark(#f6f5f1,#121417);--panel:light-dark(#ffffff,#1b1e23);--panel2:light-dark(#f0eee8,#23272e);--ink:light-dark(#1d1f23,#eceef2);--ink2:light-dark(#4a4e57,#c3c7cf);--mute:light-dark(#7a7f89,#8d929c);--line:light-dark(#e3e0d8,#2e333b);--brand:light-dark(#14213d,#9fb4e6);--gold:light-dark(#b8862b,#e0b45c);--good:light-dark(#17784b,#5fd39a);--warn:light-dark(#9a5b00,#f0b453);--bad:light-dark(#c0392b,#ff7a6b);--btn:light-dark(#14213d,#e9ecf2);--btn-ink:light-dark(#fff,#121417)}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
@@ -609,12 +609,23 @@ const DEFAULT_GUIDES=[
 const guideOf=id=>S.guides.find(g=>g.id===id)||S.guides[0]||DEFAULT_GUIDES[0];
 
 /* ================= AI (Apps Script 중계) ================= */
-async function ai(messages,{tier='default',max=4000,system}={}){if(!C.relayUrl)throw {code:'noai'};if(!GT.tok||GT.exp<Date.now()+20000){gExpired();throw {code:'auth'}}
-  const r=await fetch(C.relayUrl,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GT.tok,body:{messages:typeof messages==='string'?[{role:'user',content:messages}]:messages,tier,max_tokens:max,...(system?{system}:{})}})});
-  const j=await r.json().catch(()=>({error:'server',message:'AI 중계 응답을 읽지 못했습니다'}));if(j.error){if(j.error==='daily_limit')toast(`오늘 AI 사용 한도(${j.limit}회)를 다 썼습니다`);throw {code:j.error,why:j.why||j.message,message:j.message}}
-  return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('')}
-async function aiJSON(p,o){const t=await ai(p+'\n\nJSON만 출력한다. 설명 없이.',o);const a=t.indexOf('{'),b=t.indexOf('[');const s=(b>=0&&(a<0||b<a))?b:a;const e=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));if(s<0||e<0)throw {code:'json'};return JSON.parse(t.slice(s,e+1))}
-const aiErr=e=>e&&e.code==='login'?'AI 중계가 로그인을 확인하지 못했습니다. 다시 로그인해 주세요':e&&e.code==='daily_limit'?'오늘 AI 사용 한도를 다 썼습니다':e&&e.code==='noai'?'config.js에 relayUrl이 없습니다':e&&e.code==='unknown_action'?'일반 AI 주소가 미디어 중계 주소로 연결되어 있습니다. config.js의 relayUrl을 확인해 주세요':e&&e.code==='ai_upstream'?'AI 서비스 오류: '+(e.why||e.message||'응답하지 않았습니다'):e&&e.code==='server'?'AI 중계 오류: '+(e.why||e.message||'Apps Script 배포와 Script Properties를 확인해 주세요'):e&&e.why?'AI 연결 오류: '+e.why:'AI 연결 오류 ('+(e&&(e.code||e.message)||e)+')';
+async function ai(messages,{tier='default',max=4000,system,json=false}={}){if(!C.relayUrl)throw {code:'noai'};if(!GT.tok||GT.exp<Date.now()+20000){gExpired();throw {code:'auth'}}
+  const body={messages:typeof messages==='string'?[{role:'user',content:messages}]:messages,tier,max_tokens:max,...(system?{system}:{}),...(json?{json:true}:{})};
+  const r=await fetch(C.relayUrl,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GT.tok,body})});
+  const raw=await r.text();let j;try{j=JSON.parse(raw)}catch(_e){throw {code:'server',message:'AI 중계 응답이 JSON이 아닙니다',why:raw.slice(0,240)}}
+  if(j.error){if(j.error==='daily_limit')toast(`오늘 AI 사용 한도(${j.limit}회)를 다 썼습니다`);throw {code:j.error,why:j.why||j.message,message:j.message}}
+  const out=(j.content||[]).filter(x=>x&&x.type==='text').map(x=>x.text||'').join('').trim();
+  if(!out)throw {code:'empty',message:'AI가 빈 응답을 보냈습니다'};return out}
+function parseAIJSON(t){
+  t=String(t||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+  const tries=[t],a=t.indexOf('{'),az=t.lastIndexOf('}'),b=t.indexOf('['),bz=t.lastIndexOf(']');
+  if(a>=0&&az>a)tries.push(t.slice(a,az+1));if(b>=0&&bz>b)tries.push(t.slice(b,bz+1));
+  for(const x of tries){try{return JSON.parse(x)}catch(_e){}}
+  throw {code:'json',why:'AI가 유효한 JSON 형식으로 답하지 않았습니다'}
+}
+async function aiJSON(p,o={}){let t=await ai(p+'\n\n반드시 유효한 JSON 하나만 출력한다. 코드블록, 설명, 머리말을 쓰지 않는다.',{...o,json:true});
+  try{return parseAIJSON(t)}catch(first){const retry=await ai(p+'\n\n이전 응답 형식이 잘못되었습니다. 이번에는 반드시 유효한 JSON 하나만 출력하십시오. 코드블록이나 설명은 금지합니다.',{...o,json:true,max:Math.max(o.max||0,1200)});return parseAIJSON(retry)}}
+const aiErr=e=>e&&e.code==='login'?'AI 중계가 로그인을 확인하지 못했습니다. 다시 로그인해 주세요':e&&e.code==='daily_limit'?'오늘 AI 사용 한도를 다 썼습니다':e&&e.code==='noai'?'config.js에 relayUrl이 없습니다':e&&e.code==='unknown_action'?'일반 AI 주소가 미디어 중계 주소로 연결되어 있습니다. config.js의 relayUrl을 확인해 주세요':e&&e.code==='json'?'AI 응답 형식 오류: '+(e.why||'JSON 형식이 올바르지 않습니다. 다시 시도해 주세요'):e&&e.code==='empty'?'AI가 빈 응답을 보냈습니다. 다시 시도해 주세요':e&&e.code==='ai_upstream'?'AI 서비스 오류: '+(e.why||e.message||'응답하지 않았습니다'):e&&e.code==='server'?'AI 중계 오류: '+(e.why||e.message||'Apps Script 배포와 Script Properties를 확인해 주세요'):e&&e.why?'AI 연결 오류: '+e.why:'AI 연결 오류 ('+(e&&(e.code||e.message)||e)+')';
 
 /* ================= 자료 만들기 ================= */
 const STEPS=['계획','찾기','고르기','쓰기','확인'];

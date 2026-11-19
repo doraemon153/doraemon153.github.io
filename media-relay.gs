@@ -4,9 +4,9 @@
  * Script Properties
  *   GEMINI_API_KEY : 필수
  *   OWNER_EMAIL    : 필수
- *   AI_MODEL       : 선택, 기본 gemini-3.5-flash
+ *   AI_MODEL       : 선택, 기본 gemini-3.6-flash
  *   AI_FAST_MODEL  : 선택, 기본 gemini-3.1-flash-lite
- *   MEDIA_MODEL    : 선택, 기본 gemini-3.5-flash
+ *   MEDIA_MODEL    : 선택, 기본 gemini-3.6-flash
  *
  * 배포: 웹 앱 / 실행 사용자 나 / 액세스 권한 모든 사용자
  * 실제 호출 권한은 앱이 보내는 Google OAuth access token의 이메일을
@@ -25,9 +25,9 @@ function doGet() {
       ok: true,
       service: 'doraemon-unified-relay',
       configured: configured,
-      aiModel: String(p.getProperty('AI_MODEL') || 'gemini-3.5-flash'),
+      aiModel: String(p.getProperty('AI_MODEL') || 'gemini-3.6-flash'),
       fastModel: String(p.getProperty('AI_FAST_MODEL') || 'gemini-3.1-flash-lite'),
-      mediaModel: String(p.getProperty('MEDIA_MODEL') || 'gemini-3.5-flash')
+      mediaModel: String(p.getProperty('MEDIA_MODEL') || 'gemini-3.6-flash')
     });
   } catch (e) {
     return json_({ ok: false, error: 'server', message: String(e && e.message || e) });
@@ -76,9 +76,9 @@ function props_() {
   return {
     key: key,
     owner: owner,
-    aiModel: String(p.getProperty('AI_MODEL') || 'gemini-3.5-flash').trim(),
+    aiModel: String(p.getProperty('AI_MODEL') || 'gemini-3.6-flash').trim(),
     fastModel: String(p.getProperty('AI_FAST_MODEL') || 'gemini-3.1-flash-lite').trim(),
-    mediaModel: String(p.getProperty('MEDIA_MODEL') || 'gemini-3.5-flash').trim()
+    mediaModel: String(p.getProperty('MEDIA_MODEL') || 'gemini-3.6-flash').trim()
   };
 }
 
@@ -133,16 +133,16 @@ function textRelay_(body) {
 
   const payload = {
     contents: contents,
-    generationConfig: { maxOutputTokens: max }
+    generationConfig: { maxOutputTokens: max, ...(body.json ? { responseMimeType: 'application/json' } : {}) }
   };
   const system = String(body.system || '').trim();
   if (system) payload.systemInstruction = { parts: [{ text: system }] };
 
   try {
-    const out = generateContentWithFallback_(model, payload, '일반 AI', tier === 'fast' ? 'fast' : 'default');
-    const text = candidateText_(out.data);
+    const j = generateContent_(model, payload, '일반 AI');
+    const text = candidateText_(j);
     if (!text) return { error: 'ai_upstream', why: 'Gemini가 빈 응답을 반환했습니다.' };
-    return { content: [{ type: 'text', text: text }], model: out.model };
+    return { content: [{ type: 'text', text: text }], model: model };
   } catch (e) {
     return { error: 'ai_upstream', why: String(e && e.message || e).slice(0, 1200) };
   }
@@ -150,11 +150,11 @@ function textRelay_(body) {
 
 function ping_() {
   const p = props_();
-  const out = generateContentWithFallback_(p.fastModel, {
+  const j = generateContent_(p.fastModel, {
     contents: [{ role: 'user', parts: [{ text: 'OK라고만 답해.' }] }],
     generationConfig: { maxOutputTokens: 8 }
-  }, '연결 확인', 'fast');
-  return { ok: true, model: out.model, response: candidateText_(out.data).slice(0, 20) };
+  }, '연결 확인');
+  return { ok: true, model: p.fastModel, response: candidateText_(j).slice(0, 20) };
 }
 
 /* ================= Gemini Files API ================= */
@@ -278,11 +278,11 @@ function transcribe_(req) {
     mediaPart.videoMetadata = vm;
   }
 
-  const out = generateContentWithFallback_(p.mediaModel, {
+  const j = generateContent_(p.mediaModel, {
     contents: [{ role: 'user', parts: [mediaPart, { text: prompt }] }],
     generationConfig: { maxOutputTokens: 12000 }
-  }, '미디어 받아쓰기', 'media');
-  return { text: candidateText_(out.data), model: out.model };
+  }, '미디어 받아쓰기');
+  return { text: candidateText_(j), model: p.mediaModel };
 }
 
 function describeImage_(req, accessToken) {
@@ -308,49 +308,17 @@ function describeImage_(req, accessToken) {
     '검색에 도움이 되는 사물, 장소 유형, 문서 종류, 화면 요소를 포함한다.'
   ].join('\n');
 
-  const out = generateContentWithFallback_(p.mediaModel, {
+  const j = generateContent_(p.mediaModel, {
     contents: [{ role: 'user', parts: [
       { inlineData: { mimeType: mime, data: Utilities.base64Encode(bytes) } },
       { text: prompt }
     ] }],
     generationConfig: { maxOutputTokens: 3000 }
-  }, '사진 설명', 'media');
-  return { text: candidateText_(out.data), model: out.model };
+  }, '사진 설명');
+  return { text: candidateText_(j), model: p.mediaModel };
 }
 
 /* ================= Gemini 공통 ================= */
-
-function modelFallbacks_(primary, kind) {
-  const a = [String(primary || '').trim()];
-  if (kind === 'fast') {
-    a.push('gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash');
-  } else if (kind === 'media') {
-    a.push('gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-flash-lite');
-  } else {
-    a.push('gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash');
-  }
-  return a.filter(function(x, i) { return x && a.indexOf(x) === i; });
-}
-
-function retryableGemini_(e) {
-  const s = Number(e && e.status || 0);
-  return [404, 408, 409, 429, 500, 502, 503, 504].indexOf(s) >= 0;
-}
-
-function generateContentWithFallback_(primary, payload, label, kind) {
-  const models = modelFallbacks_(primary, kind || 'default');
-  let last = null;
-  for (let i = 0; i < models.length; i++) {
-    try {
-      return { data: generateContent_(models[i], payload, label), model: models[i] };
-    } catch (e) {
-      last = e;
-      if (!retryableGemini_(e)) throw e;
-      if (i < models.length - 1) Utilities.sleep(350);
-    }
-  }
-  throw last || new Error((label || 'Gemini') + ' 연결에 실패했습니다.');
-}
 
 function generateContent_(model, payload, label) {
   const p = props_();
@@ -392,10 +360,7 @@ function ensure2xx_(r, label) {
     const j = JSON.parse(t);
     if (j && j.error && j.error.message) t = j.error.message;
   } catch (e) {}
-  const err = new Error((label || '요청') + ' 실패 · HTTP ' + c + (t ? ' · ' + t : ''));
-  err.status = c;
-  err.body = t;
-  throw err;
+  throw new Error((label || '요청') + ' 실패 · HTTP ' + c + (t ? ' · ' + t : ''));
 }
 
 function header_(headers, wanted) {
