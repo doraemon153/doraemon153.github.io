@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>도라에몽 · 연구 서재 AI</title>
+<meta name="theme-color" content="#202124">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="도라에몽">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<script src="config.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#202124;--panel:#2a2b2f;--panel2:#34363b;--ink:#ECECE7;--ink2:#cfcfc8;--mute:#9c9d97;--line:#3e4045;--brand:#83D9D0;--gold:#EACB87;--good:#83D9D0;--warn:#EACB87;--bad:#FFAA85;--btn:#83D9D0;--btn-ink:#16181a;--verse:#EACB87;--q:#83D9D0;--key:#FFAA85}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
+button,input,textarea,select{font:inherit;color:inherit}a{color:var(--brand)}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.logo{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:19px;letter-spacing:-.3px;color:var(--ink)}.logo svg{width:30px;height:30px;flex-shrink:0}.logo small{font-weight:500;font-size:12px;color:var(--mute);margin-left:6px}
+.sp{flex:1}.wrap{max-width:820px;margin:0 auto;padding:16px 16px 110px}
+h1{font-size:22px;margin:4px 0 6px;letter-spacing:-.3px}h2{font-size:18px;margin:22px 0 8px}h3{font-size:16px;margin:18px 0 6px}
+.sub{color:var(--mute);margin:0 0 14px;font-size:14px}.note{color:var(--mute);font-size:13px;margin:8px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:600;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn.pri{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}.btn.sm{min-height:34px;padding:0 12px;font-size:13.5px;border-radius:8px}.btn:disabled{opacity:.5;cursor:default}
+.btn.big{width:100%;min-height:52px;font-size:16px}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:var(--panel2);color:var(--ink2);font-weight:600}
+.chip.ok{color:var(--good)}.chip.warn{color:var(--warn)}.chip.bad{color:var(--bad)}
+.field{margin:12px 0}.field label{display:block;font-size:13.5px;font-weight:700;margin-bottom:5px;color:var(--ink2)}
+input[type=text],input[type=search],textarea,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);outline:none}
+textarea{min-height:90px;resize:vertical;line-height:1.55}input:focus,textarea:focus,select:focus{border-color:var(--brand)}
+.row{display:flex;gap:10px;align-items:center}.row.wrapx{flex-wrap:wrap}
+.list>.it{display:flex;gap:10px;align-items:flex-start;padding:12px 2px;border-bottom:1px solid var(--line)}.list>.it:last-child{border-bottom:0}
+.it .t{font-weight:700;line-height:1.4}.it .m{font-size:12.5px;color:var(--mute)}.it .x{font-size:13.5px;color:var(--ink2);margin-top:4px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.grow{flex:1;min-width:0}
+.gcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.gcard{text-align:left;padding:14px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);cursor:pointer}
+.gcard.on{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 25%,transparent)}.gcard b{display:block;margin-bottom:2px}.gcard span{font-size:12.5px;color:var(--mute)}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.nav button{flex:1;border:0;background:none;padding:9px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--mute);cursor:pointer}
+.nav button svg{width:22px;height:22px}.nav button.on{color:var(--brand);font-weight:700}
+.bar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden}.bar i{display:block;height:100%;background:var(--brand);transition:width .3s}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.steps span{font-size:12.5px;padding:3px 10px;border-radius:99px;background:var(--panel2);color:var(--mute)}.steps span.on{background:var(--btn);color:var(--btn-ink)}.steps span.done{color:var(--good)}
+.doc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 18px;line-height:1.75}
+.doc h1{font-size:21px}.doc h2{font-size:18px;border-top:1px solid var(--line);padding-top:16px}.doc table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0;display:block;overflow-x:auto}.doc td,.doc th{border:1px solid var(--line);padding:6px 8px;vertical-align:top}.doc th{background:var(--panel2)}
+.doc blockquote{margin:8px 0;padding:4px 12px;border-left:3px solid var(--gold);color:var(--ink2)}
+.cite{border:0;background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--ink);border-radius:6px;padding:0 5px;font-size:12px;cursor:pointer;margin:0 1px;vertical-align:1px}
+.warnq{background:color-mix(in srgb,var(--bad) 15%,transparent);border-radius:4px}
+.sech{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);margin-top:22px;padding-top:14px}.sech h2{flex:1;margin:0;border:0;padding:0}
+mark{background:color-mix(in srgb,var(--gold) 35%,transparent);color:inherit;border-radius:3px}
+.ov{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--panel);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+@media(min-width:700px){.ov{align-items:center}.sheet{border-radius:16px}}
+#toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(20px);opacity:0;transition:.25s;background:var(--btn);color:var(--btn-ink);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;max-width:90vw;text-align:center;pointer-events:none}#toast.on{opacity:1;transform:translateX(-50%)}
+.gate{max-width:420px;margin:12vh auto 0;text-align:center;padding:0 20px}.gate .logo{font-size:30px}
+.empty{color:var(--mute);text-align:center;padding:26px 0}
+.tabs2{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.tabs2 button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 11px;font-size:13px;cursor:pointer}.tabs2 button.on{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.path{font-size:12px;color:var(--mute);margin-top:2px;overflow-wrap:anywhere}.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.itr{text-align:right;flex-shrink:0;max-width:46%}
+.cath{margin:22px 0 2px;font-size:14px;color:var(--gold);letter-spacing:.2px}
+.drop{display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;padding:18px 14px;border:2px dashed var(--line);border-radius:14px;background:var(--panel);cursor:pointer;margin:12px 0}.drop b{color:var(--brand);font-size:16px}.drop span{font-size:13px;color:var(--ink2)}
+body.dragging::after{content:'여기에 놓으면 드라이브에 올리고 색인합니다';position:fixed;inset:10px;border:3px dashed var(--brand);border-radius:18px;background:color-mix(in srgb,var(--bg) 88%,transparent);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--brand);z-index:40;pointer-events:none}
+.hero{border-color:var(--gold)}.chk{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:14px;cursor:pointer}.chk input{width:18px;height:18px;flex-shrink:0}.chks{display:flex;flex-wrap:wrap;gap:0 14px}
+.nocite{font-size:11px;padding:0 5px;margin-left:3px;border-radius:5px;border:1px dashed var(--warn);color:var(--warn);vertical-align:1px;white-space:nowrap}
+.dlink{font-size:12.5px;white-space:nowrap}.lock{font-size:12.5px;color:var(--ink2);background:var(--panel2);padding:8px 10px;border-radius:8px}
+.srcmeta{font-size:13px;color:var(--ink2);background:var(--panel2);border-radius:8px;padding:8px 10px;margin-top:10px;overflow-wrap:anywhere}.quote{white-space:pre-wrap;font-size:14px;line-height:1.7;margin-top:12px}
+.pvbox{background:#fff;border:1px solid var(--line);border-radius:8px;min-height:120px;overflow:hidden}.pvbox .note{padding:12px}
+.libtop{display:flex;gap:8px;align-items:center;margin:4px 0 8px}.libtop input{min-height:42px}
+.bys{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}.bys::-webkit-scrollbar{display:none}.bys button{flex-shrink:0;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink2)}.bys button.on{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.shelves{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.shelf{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer;min-height:118px}
+.shelf .spines{display:flex;align-items:flex-end;gap:3px;height:46px;width:100%;border-bottom:3px solid color-mix(in srgb,var(--gold) 60%,var(--line));margin-bottom:8px;padding:0 2px}
+.shelf .spines i{display:block;width:10px;border-radius:2px 2px 0 0;opacity:.9}.shelf b{font-size:14.5px;line-height:1.35}.shelf span{font-size:12.5px;color:var(--mute)}
+.shelf:hover,.bk:hover{border-color:var(--brand)}
+.books{display:grid;grid-template-columns:1fr;gap:8px}
+.bk{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer}.bk .t{font-weight:700;line-height:1.4}.bk .m{font-size:12.5px;color:var(--mute)}.bk .x{font-size:13.5px;color:var(--ink2);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bk-sp{display:block;width:8px;align-self:stretch;min-height:40px;border-radius:3px;flex-shrink:0}
+.crumb{margin:2px 0 4px;display:flex;gap:8px;align-items:center}.cnt{font-size:15px;color:var(--mute);font-weight:600}
+.linkb{border:0;background:none;color:var(--brand);font:inherit;font-size:14px;padding:0;cursor:pointer;text-decoration:underline}
+.chip.lnk{border:0;cursor:pointer;margin:2px 4px 2px 0;font-size:13px;padding:4px 10px}.kv{display:flex;gap:10px;margin:8px 0;align-items:flex-start}.kv>b{width:40px;flex-shrink:0;font-size:13px;color:var(--mute);padding-top:4px}.kv>div{flex:1;min-width:0}
+.toc{margin:6px 0;padding-left:22px;font-size:13.5px;color:var(--ink2)}.btn.on2{border-color:var(--brand);color:var(--brand)}
+@media(min-width:760px){.wrap{max-width:1100px}.books{grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}.shelves{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}.doc{max-width:860px;margin:0 auto}}
+body{background:radial-gradient(1200px 500px at 50% -200px,rgba(131,217,208,.10),transparent 70%),var(--bg)}
+.card,.shelf,.bk,.doc,.gcard,.drop{border-radius:20px}.btn{border-radius:999px}.btn.sm{border-radius:999px}input[type=text],input[type=search],textarea,select{border-radius:14px;background:var(--panel2);border-color:var(--line)}
+.top{border-bottom:0;box-shadow:0 1px 0 var(--line)}.nav{border-top:0;box-shadow:0 -1px 0 var(--line);border-radius:22px 22px 0 0}.nav button.on svg{background:rgba(131,217,208,.16);border-radius:999px;padding:3px;width:30px;height:28px}
+.pk.big{width:84px;height:84px}.gate{margin-top:14vh}
+.drop{border-color:rgba(131,217,208,.45);background:linear-gradient(180deg,var(--panel),var(--panel) 55%,rgba(131,217,208,.07))}
+label.btn.pri[for=upf]{box-shadow:0 4px 14px rgba(131,217,208,.25)}
+.shelf{background:linear-gradient(180deg,var(--panel) 0,var(--panel) 62%,var(--panel2) 62%);border-color:var(--line)}.shelf .spines{border-bottom:3px solid var(--gold)}
+.chip{background:var(--panel2);color:var(--ink2)}.chip.lnk:hover{color:var(--brand)}.cite{background:rgba(234,203,135,.18);color:var(--gold)}
+.hero{border-color:var(--brand);background:linear-gradient(160deg,rgba(131,217,208,.12),var(--panel) 60%)}
+.doc{line-height:1.85}.doc b,.doc .key{color:var(--key);font-weight:700}.doc blockquote{border-left:3px solid var(--verse);color:var(--verse);background:rgba(234,203,135,.06);border-radius:0 12px 12px 0;padding:8px 14px}
+.vr{color:var(--verse);font-weight:600}.q{color:var(--q)}.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;margin:6px 0 2px}.legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:currentColor}
+.claim{color:var(--key);font-weight:600;margin:10px 0}.tagrow{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}.tagrow .chip.lnk{background:rgba(131,217,208,.12);color:var(--brand)}
+#print{display:none}
+@media print{body>*:not(#print){display:none!important}#print a{color:#1f4e9a;text-decoration:none}#print{display:block;color:#000;font:11pt/1.7 "Apple SD Gothic Neo","Malgun Gothic",serif}#print h1{font-size:18pt}#print h2{font-size:14pt;margin-top:18pt}#print b{color:#b5532a}#print blockquote{color:#8a6a1f;border-left:3px solid #c9a24a;margin:6pt 0;padding-left:10pt}#print .vr{color:#8a6a1f}#print .q{color:#1f7f76}#print table{border-collapse:collapse;width:100%}#print td,#print th{border:1px solid #888;padding:4px}@page{margin:18mm}}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="modal"></div><div id="toast"></div><div id="print"></div>
+<script>
+(()=>{'use strict';
+const C=window.LX_CONFIG||{};const KEY=C.storeKey||'doraemon';
+const DAPI='https://www.googleapis.com/drive/v3/files',FOLD='application/vnd.google-apps.folder';
+const GSC='openid email profile https://www.googleapis.com/auth/drive';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lc=s=>String(s||'').trim().toLowerCase();
+const gq=x=>String(x).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let tt;function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),2800)}
+
+/* ================= 구글 로그인 ================= */
+let GT={tok:null,exp:0},gtc=null;
+try{const t=JSON.parse(sessionStorage.getItem(KEY+'-gt')||localStorage.getItem(KEY+'-gt')||'null');if(t&&t.exp>Date.now()+60000)GT=t}catch(e){}
+const GAPP=(()=>{try{return navigator.standalone===true||matchMedia('(display-mode: standalone)').matches}catch(e){return false}})();
+const gRU=()=>location.origin+location.pathname.replace(/index\.html$/,'');
+function gKeep(){try{sessionStorage.setItem(KEY+'-gt',JSON.stringify(GT));if(GAPP)localStorage.setItem(KEY+'-gt',JSON.stringify(GT))}catch(e){}}
+(function(){const h=location.hash||'';if(!/(access_token|error)=/.test(h)||!/state=/.test(h))return;const p=new URLSearchParams(h.slice(1));let st='';try{st=localStorage.getItem(KEY+'-gst')||'';localStorage.removeItem(KEY+'-gst')}catch(e){}
+  if(p.get('access_token')&&st&&p.get('state')===st){GT={tok:p.get('access_token'),exp:Date.now()+(Number(p.get('expires_in'))||3600)*1000};gKeep()}
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){location.hash=''}})();
+function gRedirect(){const st=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');try{localStorage.setItem(KEY+'-gst',st)}catch(e){}let hint='';try{hint=localStorage.getItem(KEY+'-gmail')||''}catch(e){}
+  const q={client_id:C.clientId,redirect_uri:gRU(),response_type:'token',scope:GSC,include_granted_scopes:'true',state:st};if(hint)q.login_hint=hint;else q.prompt='select_account';location.href='https://accounts.google.com/o/oauth2/v2/auth?'+new URLSearchParams(q)}
+function gisLoad(){return new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>res();s.onerror=()=>rej({code:'gisfail'});document.head.appendChild(s)})}
+function gToken(){return new Promise((res,rej)=>{gisLoad().then(()=>{gtc=gtc||google.accounts.oauth2.initTokenClient({client_id:C.clientId,scope:GSC,callback:()=>{}});
+  gtc.callback=r=>{if(r.error){rej(r);return}GT={tok:r.access_token,exp:Date.now()+(Number(r.expires_in)||3600)*1000};gKeep();res(GT.tok)};
+  gtc.error_callback=e=>rej(e);let hint;try{hint=localStorage.getItem(KEY+'-gmail')||undefined}catch(e){}gtc.requestAccessToken({prompt:hint?'':'select_account',login_hint:hint})}).catch(rej)})}
+async function gSignIn(){if(GAPP||!(window.google&&google.accounts&&google.accounts.oauth2)){gRedirect();return}try{await gToken();location.reload()}catch(e){if(e&&(e.error==='access_denied'||e.type==='popup_closed'))toast('로그인을 취소했습니다');else gRedirect()}}
+function gSignOut(){try{if(GT.tok&&window.google&&google.accounts)google.accounts.oauth2.revoke(GT.tok,()=>{})}catch(e){}GT={tok:null,exp:0};try{sessionStorage.removeItem(KEY+'-gt');localStorage.removeItem(KEY+'-gt')}catch(e){}location.reload()}
+function gExpired(){GT={tok:null,exp:0};try{sessionStorage.removeItem(KEY+'-gt');localStorage.removeItem(KEY+'-gt')}catch(e){}if(S.auth!=='login'){S.auth='login';render();toast('로그인 시간이 지났습니다. 다시 로그인하면 이어서 씁니다')}}
+if(!GT.tok&&C.clientId)setTimeout(()=>gisLoad().catch(()=>{}),300);
+
+/* ================= 구글 드라이브 ================= */
+async function gf(url,o={}){if(!GT.tok||GT.exp<Date.now()+20000){gExpired();throw {code:'auth'}}const r=await fetch(url,{...o,headers:{...(o.headers||{}),Authorization:'Bearer '+GT.tok}});
+  if(r.status===401){gExpired();throw {code:'auth'}}if(!r.ok)throw {code:r.status===404?'notfound':'drive',status:r.status};return r}
+async function gList(q,fields){let out=[],pt='';do{const u=`${DAPI}?q=${encodeURIComponent(q)}&fields=${encodeURIComponent('nextPageToken,'+(fields||'files(id,name,mimeType,modifiedTime,size,parents)'))}&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true${pt?'&pageToken='+pt:''}`;const j=await (await gf(u)).json();out=out.concat(j.files||[]);pt=j.nextPageToken||''}while(pt);return out}
+async function gCreate(name,parent,mime,body){const meta={name,mimeType:mime,...(parent?{parents:[parent]}:{})};
+  if(body===undefined){const r=await gf(DAPI+'?fields=id',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(meta)});return {id:(await r.json()).id}}
+  if(!(body instanceof Blob))body=new Blob([body],{type:mime});
+  if(body.size>4*1048576){const r0=await gf('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,modifiedTime',{method:'POST',headers:{'content-type':'application/json; charset=UTF-8','x-upload-content-type':mime},body:JSON.stringify(meta)});
+    const loc=r0.headers.get('location');if(!loc)throw {code:'drive'};const r=await fetch(loc,{method:'PUT',headers:{'content-type':mime},body});if(!r.ok)throw {code:'drive',status:r.status};return r.json()}
+  const bd='lx'+Math.random().toString(36).slice(2);const blob=new Blob([`--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: ${mime}\r\n\r\n`,body,`\r\n--${bd}--`]);
+  return (await gf('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime',{method:'POST',headers:{'content-type':'multipart/related; boundary='+bd},body:blob})).json()}
+async function gUpdate(id,mime,body){if(!(body instanceof Blob))body=new Blob([body],{type:mime});return (await gf(`https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(id)}?uploadType=media&fields=id,modifiedTime`,{method:'PATCH',headers:{'content-type':mime},body})).json()}
+const gRead=async id=>(await gf(`${DAPI}/${encodeURIComponent(id)}?alt=media`)).text();
+const gReadBlob=async id=>(await gf(`${DAPI}/${encodeURIComponent(id)}?alt=media`)).blob();
+const gTrash=id=>gf(`${DAPI}/${encodeURIComponent(id)}?fields=id`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({trashed:true})});
+const gView=id=>`https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
+async function gFolder(name,parent){const q=`name='${gq(name)}' and mimeType='${FOLD}' and trashed=false and `+(parent?`'${parent}' in parents`:`'me' in owners`);const f=(await gList(q,'files(id,name,parents)'))[0];return f?f.id:(await gCreate(name,parent||null,FOLD)).id}
+/* JSON 파일 (이름으로 찾아 읽고 쓰기) */
+const FID={};
+async function jGet(folder,name){const f=(await gList(`name='${gq(name)}' and '${folder}' in parents and trashed=false`,'files(id,modifiedTime)'))[0];if(!f)return null;FID[folder+'/'+name]=f.id;try{return JSON.parse(await gRead(f.id))}catch(e){return null}}
+async function jPut(folder,name,data){const k=folder+'/'+name;const txt=JSON.stringify(data);if(!FID[k]){const f=(await gList(`name='${gq(name)}' and '${folder}' in parents and trashed=false`,'files(id)'))[0];if(f)FID[k]=f.id}
+  if(FID[k]){await gUpdate(FID[k],'application/json',txt);return FID[k]}const r=await gCreate(name,folder,'application/json',txt);FID[k]=r.id;return r.id}
+
+/* ================= 기기 저장 (IndexedDB) ================= */
+let IDBP=null;const idb=()=>IDBP||(IDBP=new Promise((res,rej)=>{const r=indexedDB.open(KEY,1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
+async function idbGet(k){try{const d=await idb();return await new Promise(res=>{const r=d.transaction('kv').objectStore('kv').get(k);r.onsuccess=()=>res(r.result??null);r.onerror=()=>res(null)})}catch(e){return null}}
+async function idbSet(k,v){try{const d=await idb();await new Promise(res=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=res;t.onerror=res})}catch(e){}}
+async function idbClear(){try{const d=await idb();await new Promise(res=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').clear();t.oncomplete=res;t.onerror=res})}catch(e){}}
+
+/* ================= 글 뽑기 ================= */
+let PDFJS=null;
+async function pdfLib(){if(!PDFJS)PDFJS=import(new URL('pdf.min.mjs',location.href).href).then(m=>{m.GlobalWorkerOptions.workerSrc=new URL('pdf.worker.min.mjs',location.href).href;return m});try{return await PDFJS}catch(e){PDFJS=null;throw e}}
+class KoCMap{constructor(){}async fetch({kind,filename}){if(kind!=='cMapUrl')throw new Error('no '+kind);const m=await pdfLib();const b=(m.KO_CMAPS||{})[String(filename).replace(/\.bcmap$/,'')];if(!b)throw new Error('no cmap');return Uint8Array.from(atob(b),c=>c.charCodeAt(0))}}
+const PDFOPT={BinaryDataFactory:KoCMap,cMapUrl:'./cmaps/',cMapPacked:true,useWasm:false,useWorkerFetch:false,isEvalSupported:false,stopAtErrors:false};
+async function pdfText(buf,onp){const L=await pdfLib();const task=L.getDocument({data:new Uint8Array(buf),...PDFOPT,disableFontFace:true});const doc=await task.promise;const out=[];
+  try{for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const c=await pg.getTextContent();let t='';for(const it of c.items){t+=it.str;if(it.hasEOL)t+='\n'}out.push(`[p.${i}]\n`+t.replace(/[ \t]+/g,' ').trim());pg.cleanup();if(onp&&i%10===0)onp(`${i}/${doc.numPages}쪽`)}}finally{try{task.destroy()}catch(e){}}return out.join('\n\n')}
+const GDOC='application/vnd.google-apps.document',GSLIDE='application/vnd.google-apps.presentation',GSHEET='application/vnd.google-apps.spreadsheet';
+/* 구글 변환: 복사해서 구글 문서로 → 내보내기 → 임시 파일 지우기 (사진 · 스캔본은 글자 인식) */
+async function gConv(f,to,exportMime){if(+f.size>50*1048576)throw new Error('50MB가 넘어 드라이브 변환을 못 합니다');const r=await (await gf(`${DAPI}/${encodeURIComponent(f.id)}/copy?fields=id&ocrLanguage=ko`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'(도라에몽 임시) '+f.name,mimeType:to,parents:['root']})})).json();
+  try{const res=await gf(`${DAPI}/${encodeURIComponent(r.id)}/export?mimeType=${encodeURIComponent(exportMime)}`);return /pdf/.test(exportMime)?await res.arrayBuffer():await res.text()}finally{gf(`${DAPI}/${encodeURIComponent(r.id)}`,{method:'DELETE'}).catch(()=>{})}}
+const gConvText=(f,to)=>gConv(f,to,to===GSHEET?'text/csv':'text/plain');
+/* 쪽 번호까지: 구글 문서로 바꾼 뒤 PDF로 내보내 읽기. 안 되면 글만 */
+async function gConvPaged(f,to,onp){try{const t=await pdfText(await gConv(f,to,'application/pdf'),onp);if(bare(t).length>20)return t}catch(e){if(e&&e.code==='auth')throw e}f._unit='none';return gConvText(f,to)}
+let IMPF=null;async function canImport(mime){if(!mime)return false;if(!IMPF)IMPF=gf('https://www.googleapis.com/drive/v3/about?fields=importFormats').then(r=>r.json()).then(j=>j.importFormats||{}).catch(()=>({}));const m=await IMPF;return (m[mime]||[]).includes(GDOC)}
+/* 파일 종류 (MIME이 비어 있어도 확장자로) */
+const EXT=n=>(String(n||'').toLowerCase().match(/\.([a-z0-9]{1,5})$/)||[])[1]||'';
+function typeOf(f){const m=String(f.mimeType||f.mime||'').toLowerCase(),x=EXT(f.name);
+  if(m===GDOC)return 'gdoc';if(m===GSLIDE)return 'gslide';if(m===GSHEET)return 'gsheet';if(/google-apps/.test(m))return '';
+  if(x==='pdf'||/\/pdf$/.test(m))return 'pdf';
+  if(x==='hwpx'||/hwpx|hwp\+zip/.test(m))return 'hwpx';if(x==='hwp'||/hwp/.test(m))return 'hwp';
+  if(x==='pptx'||/presentationml/.test(m))return 'pptx';if(['ppt','pps','ppsx','odp'].includes(x)||/powerpoint|opendocument\.presentation/.test(m))return 'ppt';
+  if(['doc','docx','rtf','odt'].includes(x)||/wordprocessingml|msword|rtf|opendocument\.text/.test(m))return 'word';
+  if(['xls','xlsx','ods','csv'].includes(x)||/spreadsheetml|excel|opendocument\.spreadsheet|text\/csv/.test(m))return 'sheet';
+  if(['srt','vtt','sbv','smi'].includes(x)||/subrip|text\/vtt/.test(m))return 'caption';
+  if(['png','jpg','jpeg','webp','gif','bmp','heic','heif','tif','tiff'].includes(x)||/^image\//.test(m))return 'image';
+  if(['mp4','mov','m4v','avi','mkv','webm','wmv','3gp','mts'].includes(x)||/^video\//.test(m))return 'video';
+  if(['mp3','m4a','wav','aac','ogg','oga','flac','wma','amr'].includes(x)||/^audio\//.test(m))return 'audio';
+  if(['txt','md','markdown','html','htm'].includes(x)||/^text\/(plain|markdown|html)/.test(m))return 'text';
+  return ''}
+const READ_T=new Set(['gdoc','gslide','gsheet','pdf','hwp','hwpx','pptx','ppt','word','sheet','image','video','audio','text']);
+const readable=f=>READ_T.has(typeOf(f));
+const KIND={gdoc:'구글 문서',gslide:'구글 슬라이드',gsheet:'구글 시트',pdf:'PDF',hwp:'한글',hwpx:'한글',pptx:'PPT',ppt:'PPT',word:'워드',sheet:'표',image:'사진',video:'영상',audio:'음성',text:'텍스트'};
+const kindOf=e=>KIND[typeOf({mimeType:e.mime||e.mimeType,name:e.name})]||'문서';
+const bare=t=>String(t||'').replace(/\[p\.\d+\]|\s/g,'');
+const unx=s=>String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#x([0-9a-f]+);/gi,(m,h)=>String.fromCodePoint(parseInt(h,16))).replace(/&#(\d+);/g,(m,d)=>String.fromCodePoint(+d)).replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
+const htmlText=h=>unx(String(h).replace(/<(script|style)[\s\S]*?<\/\1>/gi,'').replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li|h\d|tr)>/gi,'\n').replace(/<[^>]+>/g,''));
+/* XML 문단 글 (워드 w:p/w:t · PPT a:p/a:t · 한글 hp:p/hp:t) */
+function xmlParas(x){return String(x).replace(/<(?:\w+:)?tab\b[^>]*\/>/g,'\t').split(/<\/(?:\w+:)?p>/).map(seg=>{let s='';const re=/<(?:\w+:)?t(?:\s[^>]*)?>([\s\S]*?)<\/(?:\w+:)?t>/g;let m;while((m=re.exec(seg)))s+=m[1];return unx(s.replace(/<[^>]+>/g,''))}).filter(x=>x.trim()).join('\n')}
+/* zip 풀기 (want로 고른 것만) */
+async function inflateSafe(u){const rd=new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();const parts=[];let n=0;
+  try{for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);n+=value.length}}catch(e){if(!n)throw e}const o=new Uint8Array(n);let p=0;parts.forEach(x=>{o.set(x,p);p+=x.length});return o}
+async function unzipBuf(buf,want){const dv=new DataView(buf);let e=buf.byteLength-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;if(e<0)throw new Error('zip');const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const out=[];const td=new TextDecoder();
+  for(let i=0;i<n;i++){const meth=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true);const name=td.decode(new Uint8Array(buf,p+46,nl));p+=46+nl+xl+cl;
+    if(name.endsWith('/')||(want&&!want(name)))continue;const st=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true);const data=new Uint8Array(buf,st,csz);
+    let raw;if(meth===0)raw=data.slice();else if(meth===8)raw=await inflateSafe(data);else continue;out.push([name,raw])}return out}
+const numIn=s=>+((String(s).match(/(\d+)\D*$/)||[])[1]||0);
+async function docxLocal(buf){const fs=await unzipBuf(buf,n=>n==='word/document.xml');return fs.length?xmlParas(new TextDecoder().decode(fs[0][1])):''}
+async function hwpxText(buf){const fs=await unzipBuf(buf,n=>/^Contents\/section\d+\.xml$/i.test(n));fs.sort((a,b)=>numIn(a[0])-numIn(b[0]));return fs.map(([n,r])=>xmlParas(new TextDecoder().decode(r))).join('\n\n')}
+async function pptxText(buf){const fs=await unzipBuf(buf,n=>/^ppt\/(presentation\.xml|_rels\/presentation\.xml\.rels|slides\/slide\d+\.xml|slides\/_rels\/slide\d+\.xml\.rels|notesSlides\/notesSlide\d+\.xml)$/.test(n));const F=Object.fromEntries(fs.map(([n,r])=>[n,new TextDecoder().decode(r)]));
+  const rid={};(F['ppt/_rels/presentation.xml.rels']||'').replace(/<Relationship\b[^>]*>/g,tag=>{const id=(tag.match(/\bId="([^"]+)"/)||[])[1],tg=(tag.match(/\bTarget="([^"]+)"/)||[])[1];if(id&&tg)rid[id]=tg.replace(/^\/?(ppt\/)?/,'');return ''});
+  let order=[];(F['ppt/presentation.xml']||'').replace(/<p:sldId\b[^>]*?r:id="([^"]+)"/g,(m,id)=>{if(rid[id]&&F['ppt/'+rid[id]]!==undefined)order.push('ppt/'+rid[id]);return ''});
+  if(!order.length)order=Object.keys(F).filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a,b)=>numIn(a)-numIn(b));
+  return order.map((n,i)=>{let t=xmlParas(F[n]);const rl=F[n.replace('slides/','slides/_rels/')+'.rels']||'';const nm=(rl.match(/Target="\.\.\/notesSlides\/(notesSlide\d+\.xml)"/)||[])[1];
+    if(nm&&F['ppt/notesSlides/'+nm]){const nt=xmlParas(F['ppt/notesSlides/'+nm]).replace(/^\s*\d+\s*$/gm,'').trim();if(nt)t+=`\n(발표자 노트) ${nt}`}return `[p.${i+1}]\n${t}`}).join('\n\n')}
+/* 한글 HWP 5.0: 복합 문서(CFB) 읽기 → BodyText 구역 → 문단 글 */
+function cfb(buf){const dv=new DataView(buf),U=new Uint8Array(buf);if(buf.byteLength<512||dv.getUint32(0,true)!==0xE011CFD0||dv.getUint32(4,true)!==0xE11AB1A1)throw new Error('한글(HWP) 파일 구조를 읽지 못했습니다');
+  const ss=1<<dv.getUint16(30,true),ms=1<<dv.getUint16(32,true),nFat=dv.getUint32(44,true),dir0=dv.getUint32(48,true),cut=dv.getUint32(56,true)||4096,mf0=dv.getUint32(60,true),dif0=dv.getUint32(68,true);
+  const E=0xFFFFFFFA,off=i=>(i+1)*ss,u32=(o)=>o+4<=U.length?dv.getUint32(o,true):0xFFFFFFFE;const fs=[];
+  for(let i=0;i<109&&fs.length<nFat;i++){const v=u32(76+i*4);if(v<E)fs.push(v)}
+  let d=dif0,g=0;const per=ss/4-1;while(d<E&&fs.length<nFat&&g++<100000){for(let i=0;i<per&&fs.length<nFat;i++){const v=u32(off(d)+i*4);if(v<E)fs.push(v)}d=u32(off(d)+per*4)}
+  const fat=[];fs.forEach(s=>{for(let i=0;i<ss/4;i++)fat.push(u32(off(s)+i*4))});
+  const chain=(s,tab)=>{const r=[],seen=new Set();while(s<E&&s<tab.length&&!seen.has(s)){seen.add(s);r.push(s);s=tab[s]}return r};
+  const big=(s,size)=>{const c=chain(s,fat);const o=new Uint8Array(c.length*ss);c.forEach((x,i)=>o.set(U.subarray(off(x),Math.min(U.length,off(x)+ss)),i*ss));return size==null?o:o.subarray(0,size)};
+  const dirB=big(dir0);const ents=[];for(let p=0;p+128<=dirB.length;p+=128){const v=new DataView(dirB.buffer,dirB.byteOffset+p,128);const nl=v.getUint16(64,true);let name='';for(let i=0;i<Math.min(31,Math.max(0,nl/2-1));i++)name+=String.fromCharCode(v.getUint16(i*2,true));ents.push({name,type:v.getUint8(66),l:v.getUint32(68,true),r:v.getUint32(72,true),c:v.getUint32(76,true),s:v.getUint32(116,true),size:v.getUint32(120,true)})}
+  const root=ents[0];if(!root)throw new Error('한글 파일 목록이 비어 있습니다');const mini=root.size?big(root.s,root.size):new Uint8Array(0);
+  const mfat=[];if(mf0<E){const b=big(mf0);const v=new DataView(b.buffer,b.byteOffset,b.length);for(let i=0;i+4<=b.length;i+=4)mfat.push(v.getUint32(i,true))}
+  const small=(s,size)=>{const c=chain(s,mfat);const o=new Uint8Array(c.length*ms);c.forEach((x,i)=>o.set(mini.subarray(x*ms,x*ms+ms),i*ms));return o.subarray(0,size)};
+  const files={},seen=new Set();const walk=(i,pre)=>{if(i>=E||i>=ents.length||seen.has(i))return;seen.add(i);const e=ents[i];walk(e.l,pre);walk(e.r,pre);if(e.type===2)files[pre+e.name]=e;else if(e.type===1)walk(e.c,pre+e.name+'/')};walk(root.c,'');
+  return {list:Object.keys(files),get:p=>{const e=files[p];if(!e)return null;return e.size<cut?small(e.s,e.size):big(e.s,e.size)}}}
+const HSZ1=new Set([0,10,13,24,25,26,27,28,29,30,31]);
+function hwpRecText(u){const dv=new DataView(u.buffer,u.byteOffset,u.byteLength);let p=0,out='';
+  while(p+4<=u.length){const h=dv.getUint32(p,true);p+=4;const tag=h&0x3FF;let size=(h>>>20)&0xFFF;if(size===0xFFF){if(p+4>u.length)break;size=dv.getUint32(p,true);p+=4}
+    if(tag===67){let s='';for(let i=0;i+2<=size&&p+i+2<=u.length;){const c=dv.getUint16(p+i,true);if(c<32){if(c===13||c===10){s+='\n';i+=2}else if(c===9){s+='\t';i+=16}else if(HSZ1.has(c)){if(c===30||c===31)s+=' ';i+=2}else i+=16}else{s+=String.fromCharCode(c);i+=2}}out+=s.endsWith('\n')?s:s+'\n'}
+    p+=size}return out}
+async function hwpText(buf){const c=cfb(buf);const fh=c.get('FileHeader');if(!fh||fh.length<40)throw new Error('한글 파일 머리 정보가 없습니다');const prop=new DataView(fh.buffer,fh.byteOffset,fh.byteLength).getUint32(36,true);
+  if(prop&2)throw new Error('암호가 걸린 한글 파일입니다');
+  const secs=c.list.filter(p=>/^BodyText\/Section\d+$/.test(p)).sort((a,b)=>numIn(a)-numIn(b));let t='';
+  for(const s of secs){let u=c.get(s);if(prop&1)u=await inflateSafe(u);t+=hwpRecText(u)+'\n'}
+  if(bare(t).length<20){const pv=c.get('PrvText');if(pv){t=new TextDecoder('utf-16le').decode(pv);if(prop&4)t+='\n(배포용 문서라 미리보기 글만 읽었습니다)'}}
+  return t}
+/* 자막 (.srt · .vtt · .sbv · .smi) → 30초 단위 [p.초+1] */
+const mmss=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')};
+function groupSec(lines){let t='',cur=-1;for(const [sec,tx] of lines.sort((a,b)=>a[0]-b[0])){const b=Math.floor(sec/30)*30;if(b!==cur){cur=b;t+=`\n\n[p.${b+1}]\n`}t+=tx+' '}return t.trim()}
+const tsec=x=>{const m=String(x).match(/(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,]\d+)?/);return m?(+(m[1]||0))*3600+(+m[2])*60+(+m[3]):null};
+function capText(raw,ext){const s=String(raw).replace(/\r/g,'').replace(/^﻿/,'');const out=[];
+  if(ext==='smi'){const re=/<sync[^>]*start\s*=\s*"?(\d+)"?[^>]*>([\s\S]*?)(?=<sync|<\/body|$)/gi;let m;while((m=re.exec(s))){const tx=htmlText(m[2]).replace(/\s+/g,' ').trim();if(tx)out.push([Math.floor(+m[1]/1000),tx])}}
+  else s.split(/\n\s*\n/).forEach(b=>{const L=b.split('\n').filter(x=>x.trim());const i=L.findIndex(l=>/-->/.test(l)||/^\d+:\d{2}:\d{2}[.,]\d+,\d+:\d{2}/.test(l));if(i<0)return;const st=tsec(L[i].split(/-->|,(?=\d+:)/)[0]);const tx=L.slice(i+1).join(' ').replace(/<[^>]+>/g,'').trim();if(st!=null&&tx)out.push([st,tx])});
+  return groupSec(out)}
+/* 받아쓰기 글 "[12:34] 말" → [p.초+1] */
+function tsText(txt,base=0){const out=[];String(txt).split('\n').forEach(l=>{const m=l.match(/^\s*\[?((?:\d+:)?\d{1,2}:\d{2})\]?\s*[-–:]?\s*(.+)$/);if(m)out.push([tsec(m[1]),m[2].trim()]);else if(l.trim()&&out.length)out[out.length-1][1]+=' '+l.trim()});
+  if(base&&out.length&&Math.max(...out.map(x=>x[0]))<base)out.forEach(x=>x[0]+=base);return out}
+/* 영상 · 음성 · 사진 설명: 미디어 중계 (선택, media-relay.gs) */
+async function media(action,body){if(!C.mediaUrl)throw {code:'nomedia'};const r=await fetch(C.mediaUrl,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GT.tok,action,...body})});const j=await r.json().catch(()=>({error:'server'}));if(j.error)throw {code:'media',message:'미디어 중계: '+j.error};return j}
+async function transcribe(f,ty,onp){const meta=await (await gf(`${DAPI}/${encodeURIComponent(f.id)}?fields=size,mimeType,videoMediaMetadata`)).json();const size=+meta.size||+f.size||0;
+  if(size>1900*1048576)throw new Error('2GB가 넘어 받아쓰지 못합니다');const mime=meta.mimeType||f.mimeType||(ty==='video'?'video/mp4':'audio/mpeg');
+  const st=await media('start',{name:f.name,mime,size});let off=0,file=null,g=0;
+  while(!file&&g++<400){const r=await media('push',{fileId:f.id,upload:st.upload,offset:off,size});off=r.offset;if(r.file)file=r.file;if(onp)onp(`받아쓰기용으로 보내는 중 ${Math.min(100,Math.round(off/size*100))}%`)}
+  if(!file)throw new Error('영상을 보내지 못했습니다');
+  for(let k=0;k<90&&file.state!=='ACTIVE';k++){await sleep(4000);const r=await media('wait',{name:file.name});file.state=r.state;if(r.state==='FAILED')throw new Error('AI가 영상을 처리하지 못했습니다')}
+  const dur=meta.videoMediaMetadata?Math.round(+meta.videoMediaMetadata.durationMillis/1000):0;const SEG=900;const lines=[];
+  try{if(ty==='video'&&dur>SEG+60){for(let s=0;s<dur;s+=SEG){if(onp)onp(`받아쓰는 중 ${mmss(s)} / ${mmss(dur)}`);const r=await media('transcribe',{uri:file.uri,mime,kind:ty,start:s,end:Math.min(dur,s+SEG)});lines.push(...tsText(r.text,s))}}
+    else{if(onp)onp('받아쓰는 중');const r=await media('transcribe',{uri:file.uri,mime,kind:ty});lines.push(...tsText(r.text))}}
+  finally{media('drop',{name:file.name}).catch(()=>{})}
+  return groupSec(lines)}
+const MEDIA_NEED='영상 · 음성은 같은 폴더에 같은 이름의 자막(.srt · .vtt)을 두거나, 설정에서 받아쓰기 중계를 연결하면 내용까지 색인합니다';
+async function mediaText(f,ty,onp){if(f._cap){try{const t=capText(await gRead(f._cap.id),EXT(f._cap.name));if(bare(t).length>20){f._via='자막';return t}}catch(e){if(e&&e.code==='auth')throw e}}
+  if(!C.mediaUrl){const e=new Error(MEDIA_NEED);e.media=1;throw e}f._via='AI 받아쓰기';return transcribe(f,ty,onp)}
+const clean=t=>String(t).replace(/\r/g,'').replace(/­/g,'').replace(/([가-힣a-z])-\n([가-힣a-z])/g,'$1$2').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+/* 파일 하나 → [p.N]이 붙은 글. f._unit: page · slide · sec · none */
+async function gExtract(f,blob,onp){const ty=typeOf(f);let t='';f._unit='page';const buf=async()=>(blob||await gReadBlob(f.id)).arrayBuffer();
+  const ex=m=>gf(`${DAPI}/${encodeURIComponent(f.id)}/export?mimeType=${encodeURIComponent(m)}`);
+  const gPaged=async()=>{try{return await pdfText(await (await ex('application/pdf')).arrayBuffer(),onp)}catch(e){if(e&&e.code==='auth')throw e;f._unit='none';return (await ex('text/plain')).text()}};
+  if(ty==='gdoc')t=await gPaged();
+  else if(ty==='gslide'){f._unit='slide';t=await gPaged()}
+  else if(ty==='gsheet'){f._unit='none';t=await (await ex('text/csv')).text()}
+  else if(ty==='text'){if(+f.size>20*1048576)throw new Error('텍스트 파일이 너무 큽니다');f._unit='none';t=await (blob||await gReadBlob(f.id)).text();if(/html?$/.test(EXT(f.name))||/html/.test(f.mimeType||''))t=htmlText(t)}
+  else if(ty==='pdf'){if(+f.size>300*1048576)throw new Error('300MB가 넘는 PDF는 읽지 못합니다');try{t=await pdfText(await buf(),onp)}catch(e){if(e&&e.code==='auth')throw e;t=''}
+    if(bare(t).length<40){try{t=await gConvText(f,GDOC);f._ocr=1;f._unit='none'}catch(e){if(e&&e.code==='auth')throw e}}}
+  else if(ty==='image'){f._unit='none';try{t=await gConvText(f,GDOC);f._ocr=1}catch(e){if(e&&e.code==='auth')throw e}
+    if(bare(t).length<15&&C.mediaUrl&&+f.size<15*1048576){try{const r=await media('describe',{fileId:f.id,mime:f.mimeType||'image/jpeg'});t=(t+'\n'+r.text).trim();f._via='AI 사진 읽기'}catch(e){}}}
+  else if(ty==='word'){t=await gConvPaged(f,GDOC,onp).catch(async e=>{if(e&&e.code==='auth')throw e;if(EXT(f.name)!=='docx')throw e;f._unit='none';return docxLocal(await buf())})}
+  else if(ty==='ppt'){f._unit='slide';t=await gConvPaged(f,GSLIDE,onp)}
+  else if(ty==='pptx'){f._unit='slide';try{t=await pptxText(await buf())}catch(e){if(e&&e.code==='auth')throw e;t=''}if(bare(t).length<20)t=await gConvPaged(f,GSLIDE,onp)}
+  else if(ty==='sheet'){f._unit='none';t=await gConvText(f,GSHEET)}
+  else if(ty==='hwp'||ty==='hwpx'){if(await canImport(f.mimeType)){try{t=await gConvPaged(f,GDOC,onp)}catch(e){if(e&&e.code==='auth')throw e;t=''}}
+    if(bare(t).length<20){f._unit='none';t=ty==='hwp'?await hwpText(await buf()):await hwpxText(await buf())}}
+  else if(ty==='video'||ty==='audio'){f._unit='sec';t=await mediaText(f,ty,onp)}
+  else throw new Error('읽을 수 없는 형식');
+  return clean(t)}
+/* 내 컴퓨터 파일 (내 생각 파일) */
+async function localText(file){const ty=typeOf({name:file.name,mimeType:file.type});
+  if(ty==='pdf')return pdfText(await file.arrayBuffer());
+  if(EXT(file.name)==='docx')return docxLocal(await file.arrayBuffer());
+  if(ty==='pptx')return pptxText(await file.arrayBuffer());
+  if(ty==='hwpx')return hwpxText(await file.arrayBuffer());
+  if(ty==='hwp')return hwpText(await file.arrayBuffer());
+  if(ty==='text')return /html?$/.test(EXT(file.name))?htmlText(await file.text()):file.text();
+  throw new Error('PDF · Word(.docx) · 한글 · PPT(.pptx) · 텍스트 파일만 바로 읽습니다')}
+
+/* ================= 조각 나누기 ================= */
+const CH=1200,OV=200;
+function chunkText(t){const parts=String(t).split(/\[p\.(\d+)\]\n?/);let pages=[];if(parts.length>1){if(parts[0].trim())pages.push([0,parts[0]]);for(let i=1;i<parts.length;i+=2)pages.push([+parts[i],parts[i+1]||''])}else pages=[[0,t]];
+  const out=[];let buf='',p0=null,p1=null,fresh=0;
+  for(const [p,tx] of pages){let s=String(tx).replace(/[ \t]+/g,' ').replace(/\n{2,}/g,'\n').trim();
+    while(s.length){if(p0==null)p0=p;const room=CH-buf.length;if(s.length<=room){buf+=(buf?'\n':'')+s;p1=p;fresh+=s.length;s=''}
+      else{let cut=s.lastIndexOf(' ',room);if(cut<room*0.6)cut=Math.max(room,1);buf+=(buf?'\n':'')+s.slice(0,cut);p1=p;fresh+=cut;s=s.slice(cut).trim();out.push({p0,p1,text:buf});buf=buf.slice(-OV);p0=p;fresh=0}}}
+  if(fresh>40||(!out.length&&buf.trim()))out.push({p0,p1:p1??p0,text:buf});
+  return out.map((c,i)=>({n:i,p0:c.p0,p1:c.p1,text:c.text,refs:findRefs(c.text)}))}
+
+/* ================= 성경 구절 ================= */
+const BOOKS=[
+['GEN','창세기','창','Gen|Ge'],['EXO','출애굽기','출','Exod|Ex'],['LEV','레위기','레','Lev|Le'],['NUM','민수기','민','Num|Nu'],['DEU','신명기','신','Deut|Dt'],
+['JOS','여호수아','수','Josh|Jos'],['JDG','사사기','삿','Judg|Jdg'],['RUT','룻기','룻','Ruth|Ru'],['1SA','사무엘상','삼상','1Sam|1 Sam|1Sa'],['2SA','사무엘하','삼하','2Sam|2 Sam|2Sa'],
+['1KI','열왕기상','왕상','1Kgs|1 Kgs|1Ki'],['2KI','열왕기하','왕하','2Kgs|2 Kgs|2Ki'],['1CH','역대상','대상','1Chr|1 Chr'],['2CH','역대하','대하','2Chr|2 Chr'],['EZR','에스라','스','Ezra|Ezr'],
+['NEH','느헤미야','느','Neh|Ne'],['EST','에스더','에','Esth|Est'],['JOB','욥기','욥','Job'],['PSA','시편','시','Ps|Psa|Pss'],['PRO','잠언','잠','Prov|Pr'],
+['ECC','전도서','전','Eccl|Ecc|Qoh'],['SNG','아가','아','Song|Cant'],['ISA','이사야','사','Isa|Is'],['JER','예레미야','렘','Jer|Je'],['LAM','예레미야애가','애','Lam|La'],
+['EZK','에스겔','겔','Ezek|Eze'],['DAN','다니엘','단','Dan|Da'],['HOS','호세아','호','Hos|Ho'],['JOL','요엘','욜','Joel|Jl'],['AMO','아모스','암','Amos|Am'],
+['OBA','오바댜','옵','Obad|Ob'],['JON','요나','욘','Jonah|Jon'],['MIC','미가','미','Mic|Mi'],['NAM','나훔','나','Nah|Na'],['HAB','하박국','합','Hab|Hb'],
+['ZEP','스바냐','습','Zeph|Zep'],['HAG','학개','학','Hag|Hg'],['ZEC','스가랴','슥','Zech|Zec'],['MAL','말라기','말','Mal|Ml'],
+['MAT','마태복음','마','Matt|Mt'],['MRK','마가복음','막','Mark|Mk'],['LUK','누가복음','눅','Luke|Lk'],['JHN','요한복음','요','John|Jn'],['ACT','사도행전','행','Acts|Ac'],
+['ROM','로마서','롬','Rom|Ro'],['1CO','고린도전서','고전','1Cor|1 Cor|1Co'],['2CO','고린도후서','고후','2Cor|2 Cor|2Co'],['GAL','갈라디아서','갈','Gal|Ga'],['EPH','에베소서','엡','Eph|Ep'],
+['PHP','빌립보서','빌','Phil|Php'],['COL','골로새서','골','Col'],['1TH','데살로니가전서','살전','1Thess|1 Thess|1Th'],['2TH','데살로니가후서','살후','2Thess|2 Thess|2Th'],['1TI','디모데전서','딤전','1Tim|1 Tim|1Ti'],
+['2TI','디모데후서','딤후','2Tim|2 Tim|2Ti'],['TIT','디도서','딛','Titus|Tit'],['PHM','빌레몬서','몬','Phlm|Phm'],['HEB','히브리서','히','Heb'],['JAS','야고보서','약','Jas|Jam'],
+['1PE','베드로전서','벧전','1Pet|1 Pet|1Pe'],['2PE','베드로후서','벧후','2Pet|2 Pet|2Pe'],['1JN','요한일서','요일','1John|1 John|1Jn'],['2JN','요한이서','요이','2John|2 John|2Jn'],['3JN','요한삼서','요삼','3John|3 John|3Jn'],
+['JUD','유다서','유','Jude|Jud'],['REV','요한계시록','계','Rev|Re']];
+
+const BK={};const NAMES=[];
+BOOKS.forEach(([code,full,abbr,en])=>{BK[full]=code;NAMES.push([full,code,0]);BK[abbr]=code;NAMES.push([abbr,code,1]);en.split('|').forEach(e=>{BK[e]=code;NAMES.push([e,code,1])})});
+const rx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/ /g,'\\s?');
+const ALLN=NAMES.map(x=>x[0]).sort((a,b)=>b.length-a.length).map(rx).join('|');
+const FULLN=NAMES.filter(x=>!x[2]).map(x=>x[0]).sort((a,b)=>b.length-a.length).map(rx).join('|');
+const RA=new RegExp(`(^|[^가-힣A-Za-z0-9])(${ALLN})\\.?\\s?(\\d{1,3})\\s?[:：]\\s?(\\d{1,3})(?:\\s?[-–~]\\s?(\\d{1,3}))?`,'g');
+const RB=new RegExp(`(^|[^가-힣])(${FULLN})\\s?(\\d{1,3})\\s?장(?:\\s?(\\d{1,3})(?:\\s?[-–~]\\s?(\\d{1,3}))?\\s?절)?`,'g');
+const codeOf=n=>BK[n]||BK[String(n).replace(/\s/g,'')]||BK[Object.keys(BK).find(k=>k.replace(/\s/g,'')===String(n).replace(/\s/g,''))];
+function tagRange(code,ch,v1,v2,set){if(!code)return;set.add(`${code}.${ch}`);if(v1){const e=Math.min(v2&&v2>=v1?v2:v1,v1+40);for(let v=v1;v<=e;v++)set.add(`${code}.${ch}.${v}`)}}
+function findRefs(t){const set=new Set();let m;RA.lastIndex=0;while((m=RA.exec(t))){tagRange(codeOf(m[2]),+m[3],+m[4],+m[5]||0,set)}RB.lastIndex=0;while((m=RB.exec(t))){tagRange(codeOf(m[2]),+m[3],+m[4]||0,+m[5]||0,set)}return [...set]}
+const RIN=new RegExp(`(${ALLN})\\.?\\s*(\\d{1,3})(?:\\s*(?:장|[:：])\\s*(\\d{1,3})?)?(?:\\s*절)?(?:\\s*[-–~]\\s*(\\d{1,3}))?`);
+function parseRefInput(s){const m=RIN.exec(String(s||''));if(!m)return null;const code=codeOf(m[1]);if(!code)return null;const set=new Set();tagRange(code,+m[2],+m[3]||0,+m[4]||0,set);const b=BOOKS.find(x=>x[0]===code);return {code,ch:+m[2],v1:+m[3]||0,v2:+m[4]||0,tags:[...set],label:`${b[1]} ${m[2]}${m[3]?':'+m[3]+(m[4]?'-'+m[4]:''):'장'}`}}
+
+/* ================= 책 정보 (파일 이름 "[저자]제목(키워드)") ================= */
+function parseName(name){const base=String(name).replace(/\.[a-z0-9]{2,5}$/i,'');const m=base.match(/^\s*\[([^\]]+)\]\s*(.+?)\s*(?:\(([^()]*)\))?\s*$/);if(m)return {author:m[1].trim(),title:m[2].trim(),kw:(m[3]||'').split(/[,·]/).map(x=>x.trim()).filter(Boolean)};return {author:'',title:base.trim(),kw:[]}}
+
+/* ================= 검색 (BM25 · 한글은 두 글자 조각) ================= */
+function toks(s){const out=[];String(s||'').toLowerCase().split(/[^0-9a-z가-힣Ͱ-Ͽἀ-῿֐-׿]+/).forEach(w=>{if(!w)return;if(/[가-힣]/.test(w)){if(w.length===1)out.push(w);else for(let i=0;i<w.length-1;i++)out.push(w.slice(i,i+2))}else if(w.length>=2||/\d/.test(w))out.push(w)});return out}
+const IX={docs:[],post:new Map(),len:[],avg:1,ready:false,books:[],bookTok:[],loading:null};
+function ixReset(){IX.docs=[];IX.post=new Map();IX.len=[];IX.books=[];IX.bookTok=[];IX.ready=false}
+function ixDirty(){IX.ready=false;IX.loading=null;IX.gen=(IX.gen||0)+1}
+function ixAdd(entry,chunks){const b=IX.books.length;IX.books.push(entry);entry._d0=IX.docs.length;entry._dn=chunks.length;IX.bookTok.push(new Set(toks([entry.title,entry.author,...(entry.kw||[]),...(entry.topics||[])].join(' '))));
+  for(const c of chunks){const d=IX.docs.length;IX.docs.push({b,n:c.n,p0:c.p0,p1:c.p1,u:entry.unit||'page',text:c.text,refs:c.refs||[]});const tk=toks(c.text);IX.len.push(tk.length);const tf=new Map();tk.forEach(t=>tf.set(t,(tf.get(t)||0)+1));tf.forEach((v,t)=>{let a=IX.post.get(t);if(!a){a=[];IX.post.set(t,a)}a.push(d,v)})}}
+async function chunksOf(e){let c=await idbGet('c:'+e.id+':'+e.modified);if(c)return c;if(!e.ix)return [];try{const j=JSON.parse(await gRead(e.ix));c=j.chunks||[];await idbSet('c:'+e.id+':'+e.modified,c);return c}catch(err){return []}}
+function ensureIndex(){if(IX.ready)return Promise.resolve();if(IX.loading)return IX.loading;const gen=IX.gen||0;const P=(async()=>{ixReset();const L=S.lib.filter(e=>e.status==='ok');let k=0;
+  let bkN=0;for(const e of L){const ch=await chunksOf(e);if(!e.bk&&ch.length){e.bk=bkOf(ch);bkN++}ixAdd(e,ch);if(++k%10===0){S.ixMsg=`색인 불러오는 중 ${k}/${L.length}`;paintIxMsg()}}
+  IX.avg=IX.len.length?IX.len.reduce((a,b)=>a+b,0)/IX.len.length:1;if(gen!==(IX.gen||0)){IX.loading=null;return ensureIndex()}IX.ready=true;S.ixMsg='';paintIxMsg();if(bkN){saveLib();if(S.tab==='lib')render()}})();IX.loading=P;return P}
+function paintIxMsg(){const el=$('#ixmsg');if(el)el.textContent=S.ixMsg||''}
+function inScope(b,scope){if(!scope||scope==='all')return true;const e=IX.books[b];return scope.some(s=>scopeHit(e,s))}
+/* 낱말 검색: [{d,score}] */
+function bm25(q,{limit=20,scope='all',perBook=0}={}){const qt=[...new Set(toks(q))];if(!qt.length)return [];const N=IX.docs.length||1,k1=1.2,bb=0.75;const sc=new Map();
+  for(const t of qt){const a=IX.post.get(t);if(!a)continue;const df=a.length/2;const idf=Math.log(1+(N-df+.5)/(df+.5));for(let i=0;i<a.length;i+=2){const d=a[i],tf=a[i+1];if(!inScope(IX.docs[d].b,scope))continue;const dl=IX.len[d];sc.set(d,(sc.get(d)||0)+idf*tf*(k1+1)/(tf+k1*(1-bb+bb*dl/IX.avg)))}}
+  const bq=new Set(qt);sc.forEach((v,d)=>{const bt=IX.bookTok[IX.docs[d].b];let hit=0;bq.forEach(t=>{if(bt.has(t))hit++});if(hit)sc.set(d,v*(1+0.25*Math.min(hit,4)))});
+  let r=[...sc].map(([d,score])=>({d,score})).sort((a,b)=>b.score-a.score);if(perBook){const cnt={};r=r.filter(x=>{const b=IX.docs[x.d].b;cnt[b]=(cnt[b]||0)+1;return cnt[b]<=perBook})}return r.slice(0,limit)}
+/* 구절 검색 */
+function refSearch(ref,{limit=30,scope='all'}={}){if(!ref)return [];const verse=new Set(ref.tags.filter(t=>t.split('.').length===3)),chap=`${ref.code}.${ref.ch}`;const r=[];
+  IX.docs.forEach((x,d)=>{if(!x.refs.length||!inScope(x.b,scope))return;let s=0;for(const t of x.refs){if(verse.has(t))s+=3;else if(t===chap)s+=1}if(s)r.push({d,score:s})});return r.sort((a,b)=>b.score-a.score).slice(0,limit)}
+/* 통합 검색: 구절이면 구절 + 낱말 */
+const nzs=x=>String(x||'').toLowerCase().replace(/\s+/g,'');
+function searchAll(q,o={}){const ref=parseRefInput(q);const a=ref?refSearch(ref,o):[];const b=bm25(q,{...o,perBook:o.perBook||0});const m=new Map();const zq=nzs(q);
+  if(zq.length>=2)IX.books.forEach((e,bi)=>{if(!inScope(bi,o.scope))return;if(nzs([e.title,e.author,...(e.kw||[]),...(e.topics||[])].join(' ')).includes(zq))for(let k=0;k<Math.min(2,e._dn||0);k++)m.set(e._d0+k,(m.get(e._d0+k)||0)+2.5-k*0.5)});a.forEach(x=>m.set(x.d,(m.get(x.d)||0)+x.score*2));const top=b[0]?b[0].score:1;b.forEach(x=>m.set(x.d,(m.get(x.d)||0)+x.score/top*3));
+  return [...m].map(([d,score])=>({d,score})).sort((x,y)=>y.score-x.score).slice(0,o.limit||30)}
+function snippet(text,q,n=220){const ws=String(q).split(/\s+/).filter(w=>w.length>=2);let i=-1;for(const w of ws){i=text.indexOf(w);if(i>=0)break}if(i<0&&ws.length){const bg=toks(q)[0];if(bg)i=text.indexOf(bg)}const st=Math.max(0,i-60);let s=(st?'…':'')+text.slice(st,st+n)+(st+n<text.length?'…':'');s=esc(s);
+  ws.concat(toks(q).filter(t=>/[가-힣]/.test(t))).sort((a,b)=>b.length-a.length).slice(0,8).forEach(w=>{const e=esc(w);if(e.length>=2)s=s.split(e).join(`<mark>${e}</mark>`)});return s.replace(/<mark><mark>/g,'<mark>').replace(/<\/mark><\/mark>/g,'</mark>')}
+/* 위치 표시: 쪽(p.12) · 슬라이드 3 · 영상 12:30 (영상은 [p.초+1]로 저장) · 쪽이 없는 문서는 §조각 */
+const unitLbl=(u,a,b)=>u==='sec'?`${mmss(a-1)}${b&&b!==a?'–'+mmss(b+28):''}`:u==='slide'?`슬라이드 ${a}${b&&b!==a?'–'+b:''}`:`p.${a}${b&&b!==a?'-'+b:''}`;
+const pg=x=>{const u=x.u||x.unit||(x.b!=null&&IX.books[x.b]?IX.books[x.b].unit:'')||'page';return x.p0?unitLbl(u,x.p0,x.p1):(u==='none'&&x.n!=null?`§${x.n+1}`:'')};
+
+/* ================= 상태 ================= */
+/* 나의 연구 철학 · 원칙 (설정에서 고침) — 모든 자료 만들기에 함께 들어갑니다 */
+const PHILO0=`- 성경을 최종 권위로 삼고, 본문의 문맥과 저자의 의도를 먼저 듣는다.
+- 근거는 오직 내 구글 드라이브 서재(색인)에서만 가져온다. 서재에 없는 내용은 "서재에 자료 부족"이라고 쓰고, 일반 상식이나 기억으로 채우지 않는다.
+- 학자들의 해석이 갈리면 공정하게 나란히 보여 주고, 내 입장과 다른 견해도 정직하게 소개한다.
+- 학문적 정확성과 목회적 따뜻함을 함께 담아, 결국 교회와 성도를 세우는 자료가 되게 한다.
+- 디지털 · AI 시대의 질문을 피하지 않되, 기술보다 사람과 복음을 앞에 둔다.`;
+const POCKET='<svg class="pk" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#83D9D0"/><path d="M8 17h24a12 12 0 0 1-24 0Z" fill="#ECECE7" stroke="#202124" stroke-width="2" stroke-linejoin="round"/><path d="M20 6.5l1.6 3.4 3.6.4-2.7 2.4.8 3.5-3.3-1.9-3.3 1.9.8-3.5-2.7-2.4 3.6-.4Z" fill="#EACB87"/></svg>';
+const APP=C.appName||'렉시오',TAG=C.tagline||'내 서재를 읽고, 내 지침대로 정리하는 연구 AI';
+const S={auth:'',me:null,tab:'lib',lv:{by:'cat',key:null,sort:'name'},F:{},set:{libs:[],cite:'full',drive:'off',philo:PHILO0,autoCard:true,tidy:true,rename:true,strict:true},lib:[],guides:[],idx:{run:false,done:0,total:0,cur:'',err:0,L:[],blobs:{}},q:'',res:null,
+  mk:{guide:'exegesis',ref:'',ptext:'',topic:'',idea:'',ideaName:'',ideaText:'',scope:'all',extra:''},job:null,doc:null,box:null,pins:[],libq:'',libf:'전체',libc:'',ixMsg:'',up:null,cardMsg:''};
+
+/* ================= 시작 ================= */
+async function ensureFolders(){const root=await gFolder(C.rootName||'도라에몽 서재',null);const [idx,guide,out,up]=await Promise.all(['색인','지침','결과물','올린 자료'].map(n=>gFolder(n,root)));S.F={root,idx,guide,out,up}}
+async function loadAll(){await ensureFolders();const [set,lib,guides]=await Promise.all([jGet(S.F.root,'settings.json'),jGet(S.F.idx,'library.json'),jGet(S.F.guide,'guides.json')]);
+  if(set)S.set=Object.assign(S.set,set);if(!String(S.set.philo||'').trim())S.set.philo=PHILO0;S.lib=Array.isArray(lib)?lib:[];S.guides=Array.isArray(guides)&&guides.length?guides:DEFAULT_GUIDES.map(g=>({...g}));if(!Array.isArray(guides))jPut(S.F.guide,'guides.json',S.guides).catch(()=>{})}
+const saveSet=()=>jPut(S.F.root,'settings.json',S.set).catch(()=>toast('설정을 저장하지 못했습니다'));
+const saveGuides=()=>jPut(S.F.guide,'guides.json',S.guides).catch(()=>toast('지침을 저장하지 못했습니다'));
+let libT=null;function saveLib(now){clearTimeout(libT);const go=()=>jPut(S.F.idx,'library.json',S.lib).catch(()=>{});if(now)return go();libT=setTimeout(go,1500)}
+async function boot(){try{document.title=APP+' · '+(C.subName||'연구 서재 AI')}catch(e){}render();if(!C.clientId||/여기에/.test(C.clientId)){S.auth='config';render();return}if(!GT.tok){S.auth='login';render();return}
+  try{const me=await (await gf('https://www.googleapis.com/oauth2/v3/userinfo')).json();S.me=me;try{localStorage.setItem(KEY+'-gmail',me.email||'')}catch(e){}
+    if(C.ownerEmail&&lc(me.email)!==lc(C.ownerEmail)){S.auth='denied';render();return}
+    S.auth='loading';render();await loadAll();S.auth='ok';render();ensureIndex().then(()=>{if(S.tab==='search'&&S.q)doSearch(S.q)});if(S.set.autoScan!==false&&(S.set.libs.length||S.set.drive!=='off'||S.lib.length))setTimeout(()=>{if(!S.idx.run)runIndex(null,null,true)},1500)}
+  catch(e){if(e&&e.code==='auth')return;S.auth='fail';S.err=String(e&&(e.message||e.code)||e);render()}}
+
+/* ================= 서재: 범위 · 찾기 · 색인 · 정리 ================= */
+const CATS0=['성경 · 주해','조직신학 · 교리','역사신학 · 교회사','설교 · 실천신학','디지털 신학 · 미디어','교회 · 사역 · 목회','인문 · 사회 · 기타'];
+const cats=()=>Array.isArray(S.set.cats)&&S.set.cats.length?S.set.cats:CATS0;
+const FL='files(id,name,mimeType,modifiedTime,size,parents)';
+let FMAP=null;
+async function folderMap(force){if(FMAP&&!force)return FMAP;try{const L=await gList(`mimeType='${FOLD}' and trashed=false`,'files(id,name,parents)');FMAP=Object.fromEntries(L.map(f=>[f.id,f]))}catch(e){if(e&&e.code==='auth')throw e;FMAP=FMAP||{}}return FMAP}
+function pathOf(pid){const m=FMAP||{};const parts=[];let id=pid,g=0;while(id&&m[id]&&g++<25){parts.unshift(m[id].name);id=(m[id].parents||[])[0]}return ['내 드라이브',...parts].join(' › ')}
+const OWN=()=>new Set([S.F.root,S.F.idx,S.F.guide,S.F.out].filter(Boolean));
+async function walk(rootId){const out=[];const own=OWN();const seen=new Set([rootId]);let q=[rootId];
+  while(q.length){const batch=q.splice(0,20);const L=await gList(`(${batch.map(x=>`'${x}' in parents`).join(' or ')}) and trashed=false`,FL);
+    for(const f of L){if(f.mimeType===FOLD){if(!seen.has(f.id)&&!own.has(f.id)){seen.add(f.id);q.push(f.id)}}else out.push(f)}}return out}
+/* 내 드라이브 전체: PDF만 또는 문서 전부 (사진 · 영상은 휴대폰 백업이 섞이기 쉬워 폴더 연결 · 올리기로만) */
+const DOC_MIMES=['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/rtf','application/vnd.oasis.opendocument.text','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/x-hwp','application/haansofthwp','application/vnd.hancom.hwp','application/haansofthwpx','application/vnd.hancom.hwpx','application/hwp+zip','text/plain','text/markdown',GDOC,GSLIDE];
+async function driveAll(){const ms=S.set.drive==='pdf'?['application/pdf']:DOC_MIMES;const own=OWN();
+  return (await gList(`'me' in owners and trashed=false and (${ms.map(m=>`mimeType='${m}'`).join(' or ')})`,FL)).filter(f=>!(f.parents||[]).some(p=>own.has(p)))}
+const capKey=(parent,name)=>(parent||'')+'|'+String(name).replace(/\.[^.]+$/,'').trim().toLowerCase();
+async function scanLib(){await folderMap(true);const found=new Map(),caps=new Map(),failed=new Set();
+  const take=(f,root)=>{if(String(f.name).startsWith('(도라에몽 임시)'))return;const ty=typeOf(f);if(ty==='caption'){caps.set(capKey((f.parents||[])[0],f.name),f);return}if(!READ_T.has(ty)||found.has(f.id))return;found.set(f.id,Object.assign(f,{root}))};
+  for(const r of [...S.set.libs.map(x=>x.id),S.F.up]){try{(await walk(r)).forEach(f=>take(f,r))}catch(e){if(e&&e.code==='auth')throw e;failed.add(r);toast('폴더 하나를 읽지 못했습니다')}}
+  if(S.set.drive&&S.set.drive!=='off'){try{S.idx.cur='내 드라이브 전체를 살펴보는 중';paintIdx();(await driveAll()).forEach(f=>take(f,'drive'))}catch(e){if(e&&e.code==='auth')throw e;failed.add('drive');toast('내 드라이브 전체 목록을 읽지 못했습니다')}}
+  const byId=Object.fromEntries(S.lib.map(e=>[e.id,e]));const todo=[];
+  found.forEach(f=>{const pid=(f.parents||[])[0]||'';const c=caps.get(capKey(pid,f.name));const cap=c?{id:c.id,name:c.name,m:c.modifiedTime}:null;
+    const base={root:f.root,name:f.name,mime:f.mimeType,parent:pid,path:pathOf(pid),cap};let e=byId[f.id];
+    if(!e){const n=parseName(f.name);e={id:f.id,...base,size:+f.size||0,modified:f.modifiedTime,title:n.title,author:n.author,kw:n.kw,status:'wait'};S.lib.push(e);todo.push(e);return}
+    const capCh=JSON.stringify(e.cap||null)!==JSON.stringify(cap);Object.assign(e,base);
+    if(e.modified!==f.modifiedTime||e.status==='wait'||(e.status==='fail'&&(e.tries||0)<3)||(e.status==='media'&&(cap||C.mediaUrl))||(e.status==='ok'&&capCh)){if(e.modified!==f.modifiedTime)e.tries=0;e.modified=f.modifiedTime;e.size=+f.size||0;e.status='wait';todo.push(e)}});
+  const before=S.lib.length;S.lib=S.lib.filter(e=>found.has(e.id)||failed.has(e.root));if(S.lib.length!==before)ixDirty();
+  saveLib();return todo.sort((a,b)=>(b.root===S.F.up)-(a.root===S.F.up))}
+async function indexOne(e,blob){S.idx.cur=e.title||e.name;paintIdx();const f={id:e.id,name:e.name,mimeType:e.mime,size:e.size,_cap:e.cap};
+  const t=await gExtract(f,blob,m=>{S.idx.cur=`${e.title} · ${m}`;paintIdx()});
+  if(!bare(t).length)throw new Error(typeOf(f)==='image'?'사진에서 글자를 찾지 못했습니다':'글이 없는 파일 (스캔본일 수 있음)');
+  const chunks=chunkText(t),unit=f._unit||'page';const marks=(t.match(/\[p\.(\d+)\]/g)||[]).map(x=>+x.slice(3,-1));
+  const pages=unit==='page'||unit==='slide'?marks.length:0,dur=unit==='sec'&&marks.length?Math.max(...marks)+29:0;
+  const card={title:e.title,author:e.author,kw:e.kw,pages,first:t.slice(0,1500)};
+  e.ix=await jPut(S.F.idx,`${e.id}.json`,{fileId:e.id,name:e.name,unit,card,chunks,indexedAt:new Date().toISOString(),sourceModified:e.modified});
+  await idbSet('c:'+e.id+':'+e.modified,chunks);Object.assign(e,{status:'ok',unit,bk:bkOf(chunks),chunks:chunks.length,pages,dur,ocr:!!f._ocr,via:f._via||'',err:'',tries:0});ixDirty();saveLib()}
+let WL=null;async function keepAwake(on){try{if(on&&!WL&&navigator.wakeLock)WL=await navigator.wakeLock.request('screen');else if(!on&&WL){WL.release();WL=null}}catch(e){}}
+async function runIndex(list,blobs,quiet){if(S.idx.run){if(list){list.forEach(e=>{if(!S.idx.L.includes(e))S.idx.L.push(e)});Object.assign(S.idx.blobs,blobs||{});S.idx.total=S.idx.L.length;paintIdx();toast('색인 줄에 더했습니다')}else toast('이미 색인 중입니다');return}
+  S.idx={run:true,done:0,total:0,cur:'드라이브 목록을 읽는 중',err:0,media:0,L:[],blobs:{...(blobs||{})},stop:false};render();keepAwake(true);let auth=false;
+  try{const L=list||await scanLib();S.idx.L.push(...L.filter(e=>!S.idx.L.includes(e)));S.idx.total=S.idx.L.length;paintIdx();
+    for(let k=0;k<S.idx.L.length&&!S.idx.stop;k++){const e=S.idx.L[k];
+      try{await indexOne(e,S.idx.blobs[e.id])}catch(err){if(err&&err.code==='auth'){auth=true;break}
+        if(err&&err.media){e.status='media';e.err=err.message;S.idx.media++}else{e.status='fail';e.tries=(e.tries||0)+1;e.err=String(err&&err.message||err.code||err).slice(0,140);S.idx.err++}}
+      S.idx.done++;delete S.idx.blobs[e.id];paintIdx();if(S.idx.done%15===0)saveLib(true)}}
+  catch(err){if(err&&err.code==='auth')auth=true;else toast('색인 중 문제가 생겼습니다: '+String(err&&(err.message||err.code)||err).slice(0,80))}
+  finally{S.idx.run=false;keepAwake(false)}
+  if(auth)return;await saveLib(true);ixDirty();ensureIndex();const I=S.idx;
+  if(I.total||!quiet)toast(I.total?`색인 완료 · ${I.done-I.err-I.media}개${I.err?` · 실패 ${I.err}`:''}${I.media?` · 영상 ${I.media}개는 자막 필요`:''}`:'새로 색인할 자료가 없습니다');render();autoCards()}
+function paintIdx(){const el=$('#idxbox');if(el)el.innerHTML=idxHTML()}
+function idxHTML(){const I=S.idx;if(!I.run)return '';const pc=I.total?Math.round(I.done/I.total*100):0;return `<div class="card"><div class="row"><b class="grow">색인 중 ${I.done}/${I.total||'…'}</b><span class="m">${pc}%</span><button class="btn sm" data-a="idxstop">멈추기</button></div><div class="bar" style="margin:8px 0"><i style="width:${pc}%"></i></div><div class="note" style="margin:0">${esc(I.cur)}</div><div class="note">이 화면을 켜 두세요. 멈춰도 다음에 이어서 합니다.</div></div>`}
+/* 책 카드 (AI): 4권씩 묶어 한 번에 · 서지 · 요약 · 주제 · 분류 */
+const GENRES=['주석 · 강해','신학서 · 교리','설교 · 묵상','논문 · 연구','교양 · 문화','강의 · 교안','자료 · 기타'];
+let CARDING=false;
+const topTopics=n=>{const m={};S.lib.forEach(e=>(e.topics||[]).forEach(t=>m[t]=(m[t]||0)+1));return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n).map(x=>x[0])};
+function paintCard(){const el=$('#cardbox');if(el)el.innerHTML=S.cardMsg?`<div class="card"><b>AI 정리</b><p class="note" style="margin:4px 0 0">${esc(S.cardMsg)}</p></div>`:''}
+async function bookCards(list){const items=[];for(const e of list){const c=await chunksOf(e);const mid=Math.floor(c.length/2),pick=[...c.slice(0,3),...(c.length>8?[c[mid],c[Math.floor(c.length*0.8)]]:[])];items.push({e,first:pick.map(x=>x.text).join('\n').slice(0,2600)})}
+  const r=await aiJSON(`아래 자료 ${items.length}개 각각의 서지 정보 · 분류 · 성격을 분석한다. 파일 이름과 앞 · 중간 부분만 보고 판단하며, 모르는 칸은 비운다(지어내지 않는다).\n분류(category)는 반드시 이 목록 중 하나를 그대로 쓴다: ${cats().join(' / ')}\n자료 성격(genre)은 이 중 하나: ${GENRES.join(' / ')}\n수준(level)은 입문 · 중급 · 전문 중 하나.\n주제 태그(topics)는 2~8자의 짧은 말로, 아래 이미 있는 태그와 뜻이 같으면 그 태그를 그대로 쓴다: ${topTopics(40).join(', ')||'(아직 없음)'}\n\n${items.map((x,i)=>`[${i+1}] 파일 이름: ${x.e.name} (${kindOf(x.e)} · ${x.e.path||''})\n앞부분:\n${x.first}`).join('\n\n')}\n\nJSON: {"items":[{"i":1,"title":"","author":"","year":"","category":"","genre":"","level":"","claim":"이 자료의 핵심 주장 한 문장","summary":"두세 문장","toc":["장 제목" 최대 10],"topics":["주제 태그" 최대 6]}]}`,{tier:'fast',max:Math.min(6000,800*items.length+400)});
+  const C2=cats(),done=new Set();(r.items||[]).forEach(it=>{const x=items[(+it.i||0)-1];if(!x)return;const e=x.e,n=parseName(e.name);done.add(e);const ic=String(it.category||'').trim();
+    const cat=C2.find(c=>c===ic)||C2.find(c=>ic&&(c.includes(ic)||ic.includes(c.split(' ')[0])))||C2[C2.length-1];
+    Object.assign(e,{title:n.author?n.title:(it.title||e.title),author:n.author||it.author||e.author,year:String(it.year||''),summary:it.summary||'(요약 없음)',toc:(it.toc||[]).slice(0,10),topics:(it.topics||[]).map(String).slice(0,6),cat,genre:GENRES.find(g=>g===it.genre)||GENRES.find(g=>it.genre&&g.includes(String(it.genre).split(/\s/)[0]))||GENRES[GENRES.length-1],level:['입문','중급','전문'].find(v=>String(it.level||'').includes(v))||'',claim:String(it.claim||'').slice(0,200),cv:2})});
+  items.forEach(x=>{if(!done.has(x.e))x.e.cardFail=(x.e.cardFail||0)+1});ixDirty()}
+async function autoCards(force){if(CARDING)return;const L=S.lib.filter(e=>e.status==='ok'&&(!e.summary||e.cv!==2)&&(e.cardFail||0)<2);
+  if(L.length&&(force||S.set.autoCard!==false)&&C.relayUrl){CARDING=true;S.cardMsg=`책 카드 만드는 중 0/${L.length}`;paintCard();let stop='';
+    try{for(let i=0;i<L.length;i+=4){const part=L.slice(i,i+4);try{await bookCards(part)}catch(err){if(err&&['daily_limit','auth','noai','login'].includes(err.code)){stop=err.code;break}part.forEach(e=>e.cardFail=(e.cardFail||0)+1)}
+      S.cardMsg=`책 카드 만드는 중 ${Math.min(i+4,L.length)}/${L.length}`;paintCard();saveLib()}}
+    finally{CARDING=false;S.cardMsg='';saveLib(true);ixDirty();render()}if(stop==='daily_limit')toast('오늘 AI 한도에 닿아 남은 책 카드는 다음에 이어서 만듭니다')}
+  await tidyAll()}
+/* 올린 자료 정리: 분류 폴더로 옮기고 "[저자] 제목" 이름으로 (내 드라이브의 다른 원본은 건드리지 않음) */
+async function tidyOne(e){if(e.root!==S.F.up||!e.cat||e.tidied===e.cat)return;const fn=e.cat.replace(/[\\/]+/g,'·');const fid=await gFolder(fn,S.F.up);if(FMAP&&!FMAP[fid])FMAP[fid]={id:fid,name:fn,parents:[S.F.up]};
+  const x=EXT(e.name);let nn=e.name;if(S.set.rename!==false&&e.title&&!parseName(e.name).author)nn=`${e.author?'['+e.author+'] ':''}${e.title}${x?'.'+x:''}`.replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,180);
+  const mv=e.parent&&e.parent!==fid?`&addParents=${fid}&removeParents=${e.parent}`:'';if(!mv&&nn===e.name){e.tidied=e.cat;return}
+  const r=await (await gf(`${DAPI}/${encodeURIComponent(e.id)}?fields=id,name,modifiedTime,parents${mv}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(nn!==e.name?{name:nn}:{})})).json();
+  const old=e.modified,oldP=e.parent;Object.assign(e,{name:r.name||nn,parent:fid,path:pathOf(fid),tidied:e.cat});if(e.cap&&mv)gf(`${DAPI}/${encodeURIComponent(e.cap.id)}?fields=id&addParents=${fid}&removeParents=${oldP}`,{method:'PATCH',headers:{'content-type':'application/json'},body:'{}'}).catch(()=>{});
+  if(r.modifiedTime&&r.modifiedTime!==old){const c=await idbGet('c:'+e.id+':'+old);e.modified=r.modifiedTime;if(c)await idbSet('c:'+e.id+':'+e.modified,c)}}
+async function tidyAll(){if(S.set.tidy===false)return;const L=S.lib.filter(e=>e.root===S.F.up&&e.cat&&e.tidied!==e.cat);if(!L.length)return;await folderMap();let n=0;
+  for(const e of L){try{await tidyOne(e);n++}catch(err){if(err&&err.code==='auth')break}}if(n){saveLib(true);if(S.tab==='lib')render();toast(`올린 자료 ${n}개를 분류 폴더로 정리했습니다`)}}
+/* 파일 올리기 → 드라이브 "올린 자료" → 색인 → 책 카드 → 분류 폴더 */
+const MIMEX={pdf:'application/pdf',hwp:'application/x-hwp',hwpx:'application/vnd.hancom.hwpx',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',txt:'text/plain',md:'text/markdown',csv:'text/csv',srt:'application/x-subrip',vtt:'text/vtt',smi:'text/plain',sbv:'text/plain',mp4:'video/mp4',mov:'video/quicktime',m4a:'audio/mp4',mp3:'audio/mpeg',wav:'audio/wav',heic:'image/heic',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png'};
+function paintUp(){const el=$('#upbox');if(el)el.innerHTML=S.up?`<div class="card"><b>드라이브에 올리는 중 ${S.up.done}/${S.up.total}</b><div class="bar" style="margin:8px 0"><i style="width:${Math.round(S.up.done/S.up.total*100)}%"></i></div><p class="note" style="margin:0">${esc(S.up.cur)}</p></div>`:''}
+async function uploadFiles(files){const list=[...files];if(!list.length)return;S.up={total:list.length,done:0,cur:''};if(!['lib','manage'].includes(S.tab)){S.tab='lib';render()}paintUp();await folderMap();
+  const blobs={},L=[],caps={};
+  for(const f of list){const ty=typeOf({name:f.name,mimeType:f.type});const lim=ty==='video'||ty==='audio'?2000:500;
+    if(f.size>lim*1048576){toast(`${f.name}: ${lim===2000?'2GB':'500MB'}까지 올릴 수 있습니다`);S.up.done++;paintUp();continue}
+    try{S.up.cur=f.name;paintUp();const mime=f.type||MIMEX[EXT(f.name)]||'application/octet-stream';const r=await gCreate(f.name,S.F.up,mime,f);
+      if(ty==='caption'){caps[capKey('',f.name)]={id:r.id,name:f.name,m:r.modifiedTime}}
+      else if(!READ_T.has(ty))toast(`${f.name}: 드라이브에 올렸지만 내용을 읽을 수 없는 형식입니다`);
+      else{const n=parseName(f.name);const e={id:r.id,name:f.name,mime,size:f.size,modified:r.modifiedTime,root:S.F.up,parent:S.F.up,path:pathOf(S.F.up),title:n.title,author:n.author,kw:n.kw,status:'wait'};S.lib.push(e);L.push(e);if(ty!=='video'&&ty!=='audio')blobs[e.id]=f}}
+    catch(err){if(err&&err.code==='auth')break;toast(`${f.name}: 올리지 못했습니다`)}S.up.done++;paintUp()}
+  L.forEach(e=>{const c=caps[capKey('',e.name)];if(c)e.cap=c});S.up=null;saveLib();render();if(L.length)runIndex(L,blobs)}
+
+/* ================= 지침 ================= */
+const DEFAULT_GUIDES=[
+ {id:'exegesis',name:'주해 보고서',input:'passage',desc:'본문 + 내 생각 → 문맥 · 구조 · 절별 주해 · 신학 · 적용',length:'A4 6~8쪽',tone:'학술적이되 읽기 쉬운 문체. 설교자가 바로 쓸 수 있게.',
+  outline:[{h:'문맥과 배경',ask:'책 전체 흐름, 앞뒤 문맥, 역사 · 문화적 배경'},{h:'구조 분석',ask:'단락 나누기와 흐름 개요'},{h:'절별 주해',ask:'절 또는 단락마다 핵심 단어(원어는 자료에 있을 때만), 학자들의 해석, 해석이 갈리는 곳'},{h:'신학적 주제',ask:'본문이 말하는 하나님 · 구원 · 교회 등 핵심 주제'},{h:'내 생각과의 대화',ask:'내 생각을 뒷받침하는 근거, 부딪히는 근거, 보탤 점'},{h:'적용과 설교 방향',ask:'오늘의 청중에게 주는 메시지와 설교 흐름 제안'}],
+  must:['해석이 갈리는 곳은 입장을 나란히 보여 준다'],avoid:['자료에 없는 일반론','원어를 지어내기'],prefer:[]},
+ {id:'digital',name:'디지털 신학 정리',input:'topic',desc:'주제 + 내 생각 → 개념 · 학자별 입장 · 논쟁 · 성경 근거 · 목회 적용',length:'A4 8쪽',tone:'학술 문체. 논문 준비에 바로 쓸 수 있게.',
+  outline:[{h:'한눈에 보기',ask:'이 주제에 대해 서재가 말하는 핵심 다섯 줄'},{h:'개념 정의',ask:'주요 용어를 학자마다 어떻게 정의하는가'},{h:'학자별 입장',ask:'저자 · 책 · 핵심 주장 · 근거 쪽을 표로'},{h:'논쟁점',ask:'찬성과 비판이 갈리는 지점'},{h:'성경적 · 신학적 근거',ask:'자료에서 쓰인 성경 구절과 신학 전통'},{h:'목회와 교회 적용',ask:'예배 · 양육 · 공동체 · 윤리에 주는 의미'},{h:'내 생각과의 대화',ask:'내 주장을 뒷받침하거나 반박하는 근거'},{h:'빈 곳',ask:'서재에 자료가 부족한 하위 주제와 더 찾아볼 자료 종류'}],
+  must:['반대 입장을 하나 이상 넣는다'],avoid:['서재에 없는 일반론'],prefer:[]}];
+const guideOf=id=>S.guides.find(g=>g.id===id)||S.guides[0];
+
+/* ================= AI (Apps Script 중계) ================= */
+async function ai(messages,{tier='default',max=4000,system}={}){if(!C.relayUrl)throw {code:'noai'};if(!GT.tok||GT.exp<Date.now()+20000){gExpired();throw {code:'auth'}}
+  const r=await fetch(C.relayUrl,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GT.tok,body:{messages:typeof messages==='string'?[{role:'user',content:messages}]:messages,tier,max_tokens:max,...(system?{system}:{})}})});
+  const j=await r.json().catch(()=>({error:'server'}));if(j.error){if(j.error==='daily_limit')toast(`오늘 AI 사용 한도(${j.limit}회)를 다 썼습니다`);throw {code:j.error,why:j.why}}
+  return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('')}
+async function aiJSON(p,o){const t=await ai(p+'\n\nJSON만 출력한다. 설명 없이.',o);const a=t.indexOf('{'),b=t.indexOf('[');const s=(b>=0&&(a<0||b<a))?b:a;const e=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));if(s<0||e<0)throw {code:'json'};return JSON.parse(t.slice(s,e+1))}
+const aiErr=e=>e&&e.code==='login'?'AI 중계가 로그인을 확인하지 못했습니다 (Apps Script의 CLIENT_ID 확인)':e&&e.code==='daily_limit'?'오늘 AI 사용 한도를 다 썼습니다':e&&e.code==='noai'?'config.js에 relayUrl이 없습니다':e&&e.code==='ai_upstream'?'AI 서비스가 응답하지 않았습니다. 잠시 뒤 다시 해 주세요':'AI 연결 오류 ('+(e&&(e.code||e.message)||e)+')';
+
+/* ================= 자료 만들기 ================= */
+const STEPS=['계획','찾기','고르기','쓰기','확인'];
+function jobSet(step,msg){S.job.step=step;if(msg)S.job.msg=msg;const el=$('#jobbox');if(el)el.innerHTML=jobHTML();else render()}
+function charsOf(len){const m=String(len||'').match(/(\d+)\s*(?:~\s*(\d+))?\s*쪽/);const p=m?(+(m[2]||m[1])):6;return Math.min(Math.max(p,1),40)*1400}
+function bookLabel(e){return e.author?`${e.author}, 『${e.title}』`:`『${e.title}』`}
+function citeOf(x){const e=x.book||x;const p=pg(x);return S.set.cite==='short'?`『${e.title}』${p?' '+p:''}`:`(${e.author?e.author+', ':''}『${e.title}』${p?', '+p:''})`}
+function inputsText(g,mk){return [g.input==='passage'&&mk.ref?`본문: ${mk.ref}`:'',mk.ptext?`본문 글:\n${mk.ptext.slice(0,4000)}`:'',mk.topic?`주제: ${mk.topic}`:'',mk.idea||mk.ideaText?`내 생각:\n${(mk.idea+'\n'+(mk.ideaText||'')).trim().slice(0,6000)}`:'',mk.extra?`추가 요청: ${mk.extra}`:''].filter(Boolean).join('\n\n')}
+async function makeDoc(){const mk=S.mk,g=guideOf(mk.guide);if(g.input==='passage'&&!mk.ref.trim()){toast('본문을 적어 주세요 (예: 롬 8:1-11)');return}if(g.input==='topic'&&!mk.topic.trim()){toast('주제를 적어 주세요');return}
+  if(!S.lib.some(e=>e.status==='ok')){toast('먼저 서재에서 자료를 색인해 주세요');S.tab='lib';render();return}
+  S.job={step:0,msg:'',found:[],err:''};S.tab='make';render();
+  try{await ensureIndex();const scope=mk.scope==='all'?'all':[mk.scope];const ref=g.input==='passage'?parseRefInput(mk.ref):null;const inp=inputsText(g,mk);
+    /* 1. 계획 */
+    jobSet(0,'무엇을 찾을지 정하는 중');
+    let plan;try{plan=await aiJSON(`너는 신학 연구 조교다. 사용자의 서재(책 PDF 색인)에서 아래 지침의 자료를 만들 근거를 찾으려 한다. 검색어를 짠다.\n- 검색어는 한두 낱말. 한국어 중심, 필요하면 영어 · 원어 음역도. 비슷한 말과 학자 이름도 넣는다.\n[지침] ${g.name}\n목차:\n${g.outline.map((o,i)=>`${i+1}. ${o.h} — ${o.ask}`).join('\n')}\n[입력]\n${inp}\n\nJSON: {"all":["공통 검색어" 최대 6개],"sections":[["이 목차의 검색어" 최대 5개] ...목차 수만큼 순서대로]}`,{tier:'fast',max:1500})}catch(e){if(e&&e.code&&e.code!=='json')throw e;plan={all:[mk.topic||mk.ref],sections:[]}}
+    const all=(plan.all||[]).map(String).filter(Boolean).slice(0,6);if(mk.topic)all.unshift(mk.topic);
+    /* 2. 찾기 */
+    jobSet(1,'서재에서 찾는 중');const cand=new Map();const add=(d,score,si)=>{let c=cand.get(d);if(!c){c={d,score:0,secs:new Set()};cand.set(d,c)}c.score+=score;c.secs.add(si)};
+    const refHits=ref?refSearch(ref,{limit:40,scope}):[];
+    g.outline.forEach((o,si)=>{const qs=[...all,...((plan.sections||[])[si]||[]).map(String),o.h];const pool=new Map();
+      qs.forEach(q=>bm25(q,{limit:12,scope,perBook:3}).forEach((x,i)=>pool.set(x.d,(pool.get(x.d)||0)+1/(i+3))));const pc=new Set(g.preferCats||[]);if(pc.size)pool.forEach((v,d)=>{if(pc.has(IX.books[IX.docs[d].b].cat))pool.set(d,v*1.4)});refHits.forEach((x,i)=>pool.set(x.d,(pool.get(x.d)||0)+x.score/(i+4)));
+      S.pins.forEach(d=>pool.set(d,(pool.get(d)||0)+1));const cnt={};[...pool].sort((a,b)=>b[1]-a[1]).filter(([d])=>{const b=IX.docs[d].b;cnt[b]=(cnt[b]||0)+1;return cnt[b]<=3}).slice(0,14).forEach(([d,s])=>add(d,s,si))});
+    let C0=[...cand.values()].sort((a,b)=>b.score-a.score).slice(0,80);
+    if(!C0.length)throw {code:'none'};S.job.found=C0.slice(0,12).map(c=>c.d);jobSet(1,`후보 ${C0.length}곳을 찾았습니다`);
+    /* 3. 고르기 */
+    jobSet(2,'쓸 만한 근거를 고르는 중');let picks=null;
+    try{const lst=C0.map((c,i)=>{const x=IX.docs[c.d],e=IX.books[x.b];return `c${i} | ${bookLabel(e)} ${pg(x)} | 목차후보 ${[...c.secs].map(s=>s+1).join(',')}\n${x.text.slice(0,380).replace(/\s+/g,' ')}`}).join('\n\n');
+      const r=await aiJSON(`지침 "${g.name}"의 각 목차에 근거로 쓸 조각을 고른다.\n목차:\n${g.outline.map((o,i)=>`${i+1}. ${o.h} — ${o.ask}`).join('\n')}\n[입력]\n${inp.slice(0,2500)}\n\n[후보 조각]\n${lst}\n\n쓸모 있는 조각만 고른다. v는 쓸모(1~3), s는 쓸 목차 번호들.\nJSON: {"pick":[{"c":0,"s":[1,3],"v":3}]}`,{tier:'fast',max:3000});
+      picks=(r.pick||[]).filter(p=>C0[p.c]&&(p.v||0)>=2).map(p=>({c:C0[p.c],s:(p.s||[]).map(n=>n-1).filter(n=>n>=0&&n<g.outline.length),v:p.v}))}catch(e){if(e&&e.code&&!['json'].includes(e.code))throw e}
+    if(!picks||!picks.length)picks=C0.slice(0,24).map(c=>({c,s:[...c.secs],v:2}));
+    const perSec=g.outline.map(()=>[]);picks.sort((a,b)=>b.v-a.v||b.c.score-a.c.score).forEach(p=>{(p.s.length?p.s:[...p.c.secs]).forEach(si=>{if(perSec[si]&&perSec[si].length<8&&!perSec[si].includes(p.c.d))perSec[si].push(p.c.d)})});
+    const used=[...new Set(perSec.flat())].slice(0,32);const sources=used.map((d,i)=>{const x=IX.docs[d];return {s:i+1,d,book:IX.books[x.b],p0:x.p0,p1:x.p1,u:x.u,n:x.n,text:x.text}});const sOf=d=>sources.find(x=>x.d===d);
+    /* 4. 쓰기 (목차 두 개씩) */
+    const total=charsOf(g.length),per=Math.round(total/g.outline.length);const sections=[];
+    for(let i=0;i<g.outline.length;i+=2){const part=g.outline.slice(i,i+2);jobSet(3,`쓰는 중 · ${part.map(o=>o.h).join(', ')}`);
+      const ss=[...new Set(part.flatMap((o,k)=>perSec[i+k]))].map(sOf).filter(Boolean);
+      const md=await writePart(g,inp,part,ss,per*part.length);splitSections(md,part).forEach((sec,k)=>sections.push({h:part[k].h,md:sec,src:perSec[i+k].map(d=>sOf(d)?.s).filter(Boolean)}))}
+    /* 5. 확인 */
+    jobSet(4,'인용을 원문과 대조하는 중');const doc={id:'d'+Date.now(),at:new Date().toISOString(),guide:{id:g.id,name:g.name},title:`${g.name} · ${g.input==='passage'?(ref?ref.label:mk.ref):mk.topic||'자료'}`,inputs:{...mk,ideaText:(mk.ideaText||'').slice(0,3000)},
+      sources:sources.map(x=>({s:x.s,fileId:x.book.id,title:x.book.title,author:x.book.author,year:x.book.year||'',p0:x.p0,p1:x.p1,u:x.u,n:x.n,ty:typeOf({mimeType:x.book.mime,name:x.book.name}),kind:kindOf(x.book),path:x.book.path||'',cat:x.book.cat||'',name:x.book.name,text:x.text})),sections};
+    verifyDoc(doc);S.doc=doc;S.job=null;S.tab='doc';render();saveDoc(doc).then(()=>toast('결과물 폴더에 저장했습니다')).catch(()=>toast('드라이브 저장은 실패했습니다. Word로 내려받아 두세요'))}
+  catch(e){if(e&&e.code==='auth')return;S.job={...(S.job||{}),err:e&&e.code==='none'?'서재에서 관련 자료를 찾지 못했습니다. 다른 말로 적거나 자료를 더 색인해 주세요.':aiErr(e)};render()}}
+async function writePart(g,inp,part,ss,chars,how,prev){const sys=`너는 신학 연구 조교로, 사용자의 구글 드라이브 서재(AI 색인)에서 찾은 아래 [근거 자료]만 근거로 글을 쓴다. 웹 · 일반 상식 · 기억으로 사실을 보태지 않는다.\n[사용자의 연구 철학 · 원칙 — 모든 글에서 지킨다]\n${S.set.philo||PHILO0}\n규칙:\n- 모든 문장 끝에 근거를 [S번호]로 단다. 근거 자료에 없는 내용은 쓰지 않는다. 마침표 뒤가 아니라 문장 안 끝에 단다 (예: …이다[S3].)\n- 근거가 부족한 부분은 "(서재에 자료 부족)"이라고만 적는다. 일반 지식으로 채우지 않는다.\n- 사용자의 생각은 "내 생각:"으로 구분해 소개하고, 그것을 근거와 비교한다.\n- 해석이 갈리면 입장을 나란히 보여 준다.\n- 직접 인용은 큰따옴표 "…" 안에 원문 그대로, 한 곳에 두 문장 이내로만 한다.\n- 원어는 자료에 나온 것만 쓴다.\n- 성경 본문을 그대로 옮길 때는 줄 맨 앞에 "> "를 붙인 인용 줄로 쓰고 구절 표시를 붙인다.\n- 독자 · 회중에게 던질 질문은 물음표로 끝나는 한 문장으로 쓴다.\n- 목차마다 가장 중요한 핵심 문장 하나를 **굵게** 쓴다.\n- 마크다운으로 쓴다: 목차마다 "## 목차 이름"으로 시작, 필요하면 "### 소제목", 목록, 표.`;
+  const src=ss.map(x=>`[S${x.s}] ${bookLabel(x.book)} ${pg(x)}\n${x.text}`).join('\n\n');
+  const user=`[지침] ${g.name}\n말투: ${g.tone||''}\n꼭 넣을 것: ${(g.must||[]).join(' / ')||'없음'}\n피할 것: ${(g.avoid||[]).join(' / ')||'없음'}\n\n[입력]\n${inp}\n\n[이번에 쓸 목차] (분량: 약 ${chars}자)\n${part.map(o=>`## ${o.h} — ${o.ask}`).join('\n')}\n${how?`\n[고쳐 쓰기 요청] ${how}\n[지금 글]\n${prev}\n`:''}\n[근거 자료]\n${src||'(없음)'}`;
+  return ai([{role:'user',content:user}],{tier:'default',max:Math.min(8000,Math.round(chars*1.4)+800),system:sys})}
+function splitSections(md,part){const out=part.map(()=>'');const blocks=String(md).split(/^##\s+/m).map(x=>x.trim()).filter(Boolean);
+  if(blocks.length<=1&&part.length===1)return [String(md).replace(/^##\s+.*\n?/,'').trim()];
+  blocks.forEach(b=>{const h=b.split('\n')[0].replace(/\s*—.*$/,'').trim();let k=part.findIndex(o=>h.includes(o.h)||o.h.includes(h));if(k<0)k=out.findIndex(x=>!x);if(k<0)k=part.length-1;out[k]+=(out[k]?'\n\n':'')+b.split('\n').slice(1).join('\n').trim()});return out}
+const nzq=s=>String(s).replace(/[\s"'“”‘’.,·…\-–—()\[\]]/g,'');
+/* 근거 없는 문장 표시: [S번호]가 없는 문장 (내 생각 · 서재에 없음 표시는 뺌) */
+function markNoCite(line){const segs=line.split(/(?<=[.!?。…])\s+/);for(let i=1;i<segs.length;i++){const m=segs[i].match(/^((?:\[S\d+\]\s*)+)/);if(m){segs[i-1]+=m[1].trim();segs[i]=segs[i].slice(m[1].length)}}
+  let n=0;const out=segs.filter(x=>x.trim()).map(x=>{const p=x.replace(/\*\*/g,'').replace(/^\s*([-*•]|\d+[.)])\s+/,'');if(/\[S\d+\]/.test(x)||p.length<30||/내 생각|서재에 (자료 )?(부족|없)|⟦/.test(p)||/[:：]$/.test(p.trim()))return x;n++;return x+'⟦근거 없음⟧'}).join(' ');return [out,n]}
+function verifyDoc(doc){const ok=new Set(doc.sources.map(x=>x.s));let bad=0,qs=0,nc=0;
+  doc.sections.forEach(sec=>{sec.md=sec.md.replace(/⟦근거 없음⟧/g,'').replace(/\[S(\d+)\]/g,(m,n)=>ok.has(+n)?m:'');
+    sec.md=sec.md.replace(/(["“])([^"“”\n]{8,300})(["”])/g,(m,a,q,b)=>{qs++;const z=nzq(q);if(z.length<6)return m;const hit=doc.sources.some(x=>nzq(x.text).includes(z));if(hit)return m;bad++;return `${a}${q}${b}⟦확인 필요⟧`});
+    if(S.set.strict!==false)sec.md=sec.md.split('\n').map(l=>{if(!l.trim()||/^\s*(#|\||>)/.test(l)||/내 생각/.test(l))return l;const [o,n]=markNoCite(l);nc+=n;return o}).join('\n')});
+  doc.verify={quotes:qs,bad,nocite:nc};return doc}
+async function saveDoc(doc){const name=`${doc.at.slice(0,10)} ${doc.title.replace(/[\\/:*?"<>|]+/g,' ')}.json`;doc.file=await jPut(S.F.out,name,doc);return doc.file}
+async function rewriteSec(i,how){const doc=S.doc,sec=doc.sections[i],g=guideOf(doc.guide.id)||{name:doc.guide.name,outline:[]};const o=(g.outline||[]).find(x=>x.h===sec.h)||{h:sec.h,ask:''};
+  const ss=(sec.src||[]).map(n=>doc.sources.find(x=>x.s===n)).filter(Boolean).map(x=>({...x,book:{title:x.title,author:x.author}}));
+  toast('다시 쓰는 중…');try{const md=await writePart(g,inputsText(g,doc.inputs),[o],ss,Math.max(800,sec.md.length),how||'더 정확하고 읽기 쉽게 다시 쓴다',sec.md);sec.md=splitSections(md,[o])[0]||md;verifyDoc(doc);render();saveDoc(doc).catch(()=>{});toast('다시 썼습니다')}catch(e){toast(aiErr(e))}}
+
+/* ================= 마크다운 → 화면 · Word ================= */
+function inl(s,cite){let h=esc(s).replace(/(^|[.!。]\s+|^\s*)([^.!?。\n<]{4,}?\?)(?=\s|$|\[S)/g,(m,a,q)=>`${a}<span class="q">${q}</span>`).replace(/\*\*(.+?)\*\*/g,'<b class="key">$1</b>').replace(RA,(m,a)=>`${a}<span class="vr">${m.slice(a.length)}</span>`).replace(/⟦확인 필요⟧/g,'<span class="warnq" title="원문과 글자가 다릅니다">⚠ 확인 필요</span>').replace(/⟦근거 없음⟧/g,'<span class="nocite" title="이 문장에는 서재 근거 표시가 없습니다">근거 없음</span>')
+  .replace(/⟦L:([\w-]+)⟧/g,(m,id)=>`<a class="dlink" href="${gView(id)}" target="_blank" rel="noopener">드라이브에서 열기 ↗</a>`);return h.replace(/\[S(\d+)\]/g,(m,n)=>cite(+n))}
+function md2html(md,cite){const L=String(md||'').split('\n');let h='',i=0;
+  while(i<L.length){const l=L[i];
+    if(/^\s*\|.*\|\s*$/.test(l)){const rows=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){rows.push(L[i]);i++}const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(x=>x.trim());const body=rows.filter(r=>!/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      h+=`<table>${body.map((r,k)=>`<tr>${cells(r).map(c=>k===0?`<th>${inl(c,cite)}</th>`:`<td>${inl(c,cite)}</td>`).join('')}</tr>`).join('')}</table>`;continue}
+    if(/^###\s+/.test(l)){h+=`<h3>${inl(l.replace(/^###\s+/,''),cite)}</h3>`;i++;continue}
+    if(/^##\s+/.test(l)){h+=`<h2>${inl(l.replace(/^##\s+/,''),cite)}</h2>`;i++;continue}
+    if(/^#\s+/.test(l)){h+=`<h2>${inl(l.replace(/^#\s+/,''),cite)}</h2>`;i++;continue}
+    if(/^\s*([-*•])\s+/.test(l)){h+='<ul>';while(i<L.length&&/^\s*([-*•])\s+/.test(L[i])){h+=`<li>${inl(L[i].replace(/^\s*[-*•]\s+/,''),cite)}</li>`;i++}h+='</ul>';continue}
+    if(/^\s*\d+[.)]\s+/.test(l)){h+='<ol>';while(i<L.length&&/^\s*\d+[.)]\s+/.test(L[i])){h+=`<li>${inl(L[i].replace(/^\s*\d+[.)]\s+/,''),cite)}</li>`;i++}h+='</ol>';continue}
+    if(/^>\s?/.test(l)){h+=`<blockquote>${inl(l.replace(/^>\s?/,''),cite)}</blockquote>`;i++;continue}
+    if(!l.trim()){i++;continue}
+    let p=l;i++;while(i<L.length&&L[i].trim()&&!/^(\s*[|#>]|\s*[-*•]\s|\s*\d+[.)]\s)/.test(L[i])){p+=' '+L[i];i++}h+=`<p>${inl(p,cite)}</p>`}
+  return h}
+function docMd(doc,{plain,exp}={}){const S2=Object.fromEntries(doc.sources.map(x=>[x.s,x]));const c=n=>{const x=S2[n];return x?citeOf(x):''};
+  let secs=doc.sections.map(s=>`## ${s.h}\n\n${s.md}`).join('\n\n');if(exp)secs=secs.replace(/⟦근거 없음⟧/g,'');const used=new Map(),cited=new Set();
+  doc.sections.forEach(s=>(s.md.match(/\[S(\d+)\]/g)||[]).forEach(m=>{const x=S2[+m.slice(2,-1)];if(!x)return;cited.add(x.s);const u=used.get(x.fileId)||{x,locs:[]};const l=pg(x);if(l&&!u.locs.includes(l))u.locs.push(l);used.set(x.fileId,u)}));
+  const bib=[...used.values()].sort((a,b)=>(a.x.author||a.x.title).localeCompare(b.x.author||b.x.title,'ko')).map(u=>`- ${u.x.author?u.x.author+', ':''}『${u.x.title}』${u.x.year?' ('+u.x.year+')':''}${u.locs.length?' — '+u.locs.join(', '):''} · ${u.x.path||'내 드라이브'} ⟦L:${u.x.fileId}⟧`).join('\n');
+  const list=doc.sources.filter(x=>cited.has(x.s)).map(x=>`- S${x.s}. ${citeOf(x)} · ${x.kind||''} ⟦L:${x.fileId}⟧`).join('\n');
+  let body=secs+(bib?`\n\n## 참고문헌\n\n${bib}`:'');if(exp&&list)body+=`\n\n## 근거 목록 (모두 내 구글 드라이브 서재)\n\n${list}`;
+  return plain?body.replace(/\[S(\d+)\]/g,(m,n)=>' '+c(+n)):body}
+/* Word 만들기 (라이브러리 없이) */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zipBlob(files,mime){const enc=new TextEncoder();const parts=[],cen=[];let off=0;
+  for(const [name,str] of files){const nb=enc.encode(name),db=typeof str==='string'?enc.encode(str):str;const crc=crc32(db);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);h.setUint32(14,crc,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);
+    parts.push(h.buffer,nb,db);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);c.setUint32(16,crc,true);c.setUint32(20,db.length,true);c.setUint32(24,db.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);
+    cen.push(c.buffer,nb);off+=30+nb.length+db.length}
+  const cs=cen.reduce((a,b)=>a+(b.byteLength??b.length),0);const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,e.buffer],{type:mime})}
+const xe=s=>String(s??'').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function docxOf(doc){const FONT='<w:rFonts w:ascii="Malgun Gothic" w:hAnsi="Malgun Gothic" w:eastAsia="Malgun Gothic"/>';const S2=Object.fromEntries(doc.sources.map(x=>[x.s,x]));const rels=[];const rid=u=>{let k=rels.indexOf(u);if(k<0){rels.push(u);k=rels.length-1}return 'rIdL'+(k+1)};
+  const run=(t,o={},lk)=>`<w:r><w:rPr>${FONT}${o.b?'<w:b/>':''}${lk?'<w:color w:val="1F4E9A"/><w:u w:val="single"/>':o.c?`<w:color w:val="${o.c}"/>`:''}<w:sz w:val="${o.sz||21}"/><w:szCs w:val="${o.sz||21}"/></w:rPr><w:t xml:space="preserve">${xe(t)}</w:t></w:r>`;
+  const hl=(u,t,o)=>`<w:hyperlink r:id="${rid(u)}" w:history="1">${run(t,o,1)}</w:hyperlink>`;
+  const runs=(t,o={})=>String(t).replace(/⟦확인 필요⟧/g,'[확인 필요]').replace(/⟦근거 없음⟧/g,'').split(/(\*\*[^*]+\*\*|\[S\d+\]|⟦L:[\w-]+⟧)/).filter(Boolean).map(seg=>{let m=seg.match(/^\[S(\d+)\]$/);
+    if(m){const x=S2[+m[1]];return x?run(' ',o)+hl(gView(x.fileId),citeOf(x),{...o,sz:Math.max(16,(o.sz||21)-3)}):''}m=seg.match(/^⟦L:([\w-]+)⟧$/);if(m)return hl(gView(m[1]),'드라이브에서 열기',{...o,sz:17});
+    if(/^\*\*.*\*\*$/.test(seg))return runs(seg.slice(2,-2),{...o,b:true,c:'B5532A'});return run(seg,o)}).join('');
+  const P=(t,o={})=>`<w:p><w:pPr><w:spacing w:before="${o.bf||0}" w:after="${o.af??100}" w:line="${o.ln||320}" w:lineRule="auto"/>${o.ind?`<w:ind w:left="${o.ind}" w:hanging="240"/>`:''}${o.jc?`<w:jc w:val="${o.jc}"/>`:''}</w:pPr>${runs(t,o)}</w:p>`;
+  const W=9638;const bd='<w:tblBorders>'+['top','left','bottom','right','insideH','insideV'].map(k=>`<w:${k} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`).join('')+'</w:tblBorders>';
+  const T=rows=>{const n=Math.max(...rows.map(r=>r.length));const w=Math.round(W/n);return `<w:tbl><w:tblPr><w:tblW w:w="${W}" w:type="dxa"/>${bd}<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${Array(n).fill(`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${rows.map((r,i)=>`<w:tr>${Array.from({length:n},(_,j)=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${i===0?'<w:shd w:val="clear" w:color="auto" w:fill="EEF1F6"/>':''}</w:tcPr>${P(r[j]||'',{af:0,sz:18,b:i===0,ln:280})}</w:tc>`).join('')}</w:tr>`).join('')}</w:tbl>${P('',{af:60})}`};
+  const md=docMd(doc,{exp:true});const L=md.split('\n');let body=P(doc.title,{b:1,sz:32,jc:'center',af:80})+P(`${doc.at.slice(0,10)} · ${APP} · 근거 ${doc.sources.length}곳 · 모든 근거는 내 구글 드라이브 서재에서`,{sz:18,c:'666666',jc:'center',af:300});
+  const inp=doc.inputs||{};[inp.ref&&`본문: ${inp.ref}`,inp.topic&&`주제: ${inp.topic}`].filter(Boolean).forEach(x=>body+=P(x,{sz:19,c:'444444'}));
+  for(let i=0;i<L.length;i++){const l=L[i];if(/^\s*\|.*\|\s*$/.test(l)){const rows=[];while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){if(!/^\s*\|[\s:|-]+\|\s*$/.test(L[i]))rows.push(L[i].trim().replace(/^\||\|$/g,'').split('|').map(x=>x.trim()));i++}i--;body+=T(rows);continue}
+    if(/^##\s+/.test(l))body+=P(l.replace(/^##\s+/,''),{b:1,sz:26,bf:280,af:120,c:'14213D'});else if(/^###\s+/.test(l))body+=P(l.replace(/^###\s+/,''),{b:1,sz:22,bf:160,af:80});
+    else if(/^\s*[-*•]\s+/.test(l))body+=P('• '+l.replace(/^\s*[-*•]\s+/,''),{ind:360});else if(/^\s*\d+[.)]\s+/.test(l))body+=P(l.trim(),{ind:360});else if(/^>\s?/.test(l))body+=P(l.replace(/^>\s?/,''),{c:'8A6A1F',ind:360});else if(l.trim())body+=P(l)}
+  const docx=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  return zipBlob([['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'],
+    ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'],
+    ['word/_rels/document.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.map((u,i)=>`<Relationship Id="rIdL${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${xe(u)}" TargetMode="External"/>`).join('')}</Relationships>`],
+    ['word/document.xml',docx]],'application/vnd.openxmlformats-officedocument.wordprocessingml.document')}
+function saveFile(name,blob){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name.replace(/[\\/:*?"<>|]+/g,'_');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),8000)}
+async function exportWord(){const d=S.doc;const b=docxOf(d);const name=`${d.at.slice(0,10)} ${d.title}.docx`;saveFile(name,b);try{await gCreate(name.replace(/[\\/:*?"<>|]+/g,' '),S.F.out,b.type,b);toast('Word를 내려받고 결과물 폴더에도 저장했습니다')}catch(e){toast('Word를 내려받았습니다')}}
+function exportPdf(){const d=S.doc;$('#print').innerHTML=`<h1>${esc(d.title)}</h1><p style="color:#555">${esc(d.at.slice(0,10))} · ${esc(APP)} · 근거 ${d.sources.length}곳 · 모든 근거는 내 구글 드라이브 서재에서</p>${md2html(docMd(d,{exp:true}),n=>{const x=d.sources.find(s=>s.s===n);return x?` <a href="${gView(x.fileId)}">${esc(citeOf(x))}</a>`:''})}`;setTimeout(()=>window.print(),50)}
+
+/* ================= 화면 ================= */
+const ICON={make:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',lib:'<path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2.5Z"/><path d="M8 7h7"/>',box:'<path d="M3 7h18v13H3z"/><path d="M3 7l2-4h14l2 4"/><path d="M10 12h4"/>'};
+const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
+function modal(h){$('#modal').innerHTML=`<div class="ov" data-a="ovclose"><div class="sheet" role="dialog" aria-modal="true">${h}</div></div>`}
+function closeModal(){$('#modal').innerHTML=''}
+function render(){const app=$('#app');if(S.auth!=='ok'){app.innerHTML=gate();return}
+  const nav=[['lib','내 서재'],['make','AI 정리'],['box','보관함']];const cur=S.tab==='doc'?'make':['search','manage'].includes(S.tab)?'lib':S.tab;
+  const body=S.tab==='search'?vSearch():S.tab==='lib'?vLib():S.tab==='manage'?vManage():S.tab==='box'?vBox():S.tab==='doc'?vDoc():S.tab==='guides'?vGuides():S.tab==='set'?vSet():vMake();
+  app.innerHTML=`<div class="top"><span class="logo">${POCKET}${esc(APP)}<small>${esc(C.subName||'연구 서재 AI')}</small></span><span class="sp"></span><button class="btn sm" data-a="tab:set" aria-label="설정">설정</button></div><main class="wrap">${body}</main><nav class="nav">${nav.map(([k,l])=>`<button class="${cur===k?'on':''}" data-a="tab:${k}">${svg(k)}<span>${l}</span></button>`).join('')}</nav>`;
+  if(S.tab==='lib'||S.tab==='manage'){paintUp();paintCard()}}
+function gate(){const box=x=>`<div class="gate"><div class="logo" style="flex-direction:column;gap:10px">${POCKET.replace('class="pk"','class="pk big"')}${esc(APP)}</div><p class="sub" style="margin-top:4px">${esc(TAG)}</p>${x}</div>`;
+  if(S.auth==='config')return box('<p>아직 연결 설정이 비어 있습니다.</p><p class="note">config.js에 clientId · ownerEmail · relayUrl을 넣어 주세요. 방법은 README.md에 있습니다.</p>');
+  if(S.auth==='denied')return box(`<p>${esc(S.me&&S.me.email)} 계정은 쓸 수 없습니다.<br>config.js의 ownerEmail 계정으로 로그인해 주세요.</p><button class="btn" data-a="logout">다른 계정으로</button>`);
+  if(S.auth==='loading'||!S.auth)return box('<p class="note">서재를 여는 중…</p>');
+  if(S.auth==='fail')return box(`<p>드라이브를 열지 못했습니다.</p><p class="note">${esc(S.err||'')}</p><button class="btn pri" data-a="reload">다시 시도</button>`);
+  return box('<button class="btn pri big" data-a="login">구글 계정으로 시작</button><p class="note">자료 원본은 내 구글 드라이브에만 있고, AI에는 질문마다 고른 부분만 보냅니다.</p>')}
+const ACCEPT='.pdf,.doc,.docx,.rtf,.odt,.hwp,.hwpx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.md,.html,.srt,.vtt,.smi,.sbv,image/*,video/*,audio/*';
+/* --- 서재 --- */
+function itemHTML(e){const st=e.status==='ok'?['ok','완료']:e.status==='fail'?['bad','실패']:e.status==='media'?['warn','자막 필요']:['warn','대기'];
+  const amt=e.unit==='sec'&&e.dur?` · ${mmss(e.dur)}`:e.pages?` · ${e.pages}${e.unit==='slide'?'장':'쪽'}`:'';const by=[e.author,e.year].filter(Boolean).join(' · ');
+  return `<div class="it"><div class="grow"><div class="t">${esc(e.title)}</div><div class="m">${esc(by)}${by?' · ':''}${esc(kindOf(e))}${amt}${e.ocr?' · 글자 인식':''}${e.via?' · '+esc(e.via):''}</div><div class="path">📁 ${esc(e.path||'내 드라이브')}</div>${e.summary&&e.summary!=='(요약 없음)'?`<div class="x">${esc(e.summary)}</div>`:''}${(e.topics||[]).length?`<div class="tags">${e.topics.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}${e.err?`<div class="m" style="color:var(--${e.status==='media'?'warn':'bad'})">${esc(e.err)}</div>`:''}</div>
+   <div class="itr"><span class="chip ${st[0]}">${st[1]}</span><div class="row" style="margin-top:6px;justify-content:flex-end;flex-wrap:wrap;gap:6px"><a class="btn sm" href="${gView(e.id)}" target="_blank" rel="noopener">드라이브</a><button class="btn sm" data-a="ecard:${esc(e.id)}">고치기</button><button class="btn sm" data-a="reidx:${esc(e.id)}">다시</button></div></div></div>`}
+function vManage(){const L=S.lib;const c=k=>L.filter(e=>e.status===k).length;const F=['전체','완료','대기','실패','자막 필요','글자 인식'];const f=S.libf,cf=S.libc,q=lc(S.libq),C2=cats();
+  const ok=L.filter(e=>e.status==='ok');const catN=k=>ok.filter(e=>e.cat===k).length;
+  const show=L.filter(e=>(f==='전체'||(f==='완료'&&e.status==='ok')||(f==='대기'&&e.status==='wait')||(f==='실패'&&e.status==='fail')||(f==='자막 필요'&&e.status==='media')||(f==='글자 인식'&&e.ocr))&&(!cf||(cf==='_none'?!e.cat:e.cat===cf))&&(!q||lc([e.title,e.author,e.name,e.path,(e.topics||[]).join(' ')].join(' ')).includes(q)));
+  const ci=e=>{const k=C2.indexOf(e.cat);return k<0?99:k};show.sort((a,b)=>ci(a)-ci(b)||(a.author||a.title).localeCompare(b.author||b.title,'ko'));
+  const noCard=ok.filter(e=>!e.summary||e.cv!==2).length,chunks=L.reduce((a,e)=>a+(e.chunks||0),0),first=!L.length&&S.set.drive==='off'&&!S.set.libs.length;
+  let last;const grp=!cf&&!q&&f==='전체';const rows=show.slice(0,300).map(e=>{let h='';if(grp&&(e.cat||'')!==last){last=e.cat||'';h=`<h3 class="cath">${esc(e.cat||'분류 전')}</h3>`}return h+itemHTML(e)}).join('');
+  const dv=S.set.drive||'off';
+  return `<div class="crumb"><button class="btn sm" data-a="tab:lib">‹ 내 서재</button></div><h1>서재 관리</h1><p class="sub">${ok.length}개 색인 완료 · 조각 ${chunks.toLocaleString()}개${c('wait')?` · 대기 ${c('wait')}`:''}${c('fail')?` · 실패 ${c('fail')}`:''}${c('media')?` · 자막 필요 ${c('media')}`:''}</p>
+  ${first?`<div class="card hero"><b>처음이라면</b><p class="note">내 구글 드라이브에 있는 PDF를 모두 찾아 AI 색인으로 정리합니다. 원본 파일은 옮기거나 고치지 않습니다.</p><button class="btn pri big" data-a="driveall:pdf">내 드라이브의 PDF 전부 색인하기</button></div>`:''}
+  <div id="upbox"></div>
+  <label class="drop" for="upf"><b>＋ 자료 올리기</b><span>끌어 놓거나 눌러서 고르세요 · 텍스트 · 사진 · PDF · 워드 · 한글 · PPT · 엑셀 · 영상 · 음성 · 자막</span><span class="note" style="margin:4px 0 0">드라이브 "${esc(C.rootName||'도라에몽 서재')} / 올린 자료"에 저장 → 색인 → 분류 폴더로 정리</span></label><input id="upf" type="file" multiple hidden accept="${ACCEPT}">
+  <div id="idxbox">${idxHTML()}</div><div id="cardbox"></div>
+  <div class="card"><b>서재 범위</b><p class="note" style="margin-top:2px">AI는 여기서 색인한 자료에서만 근거를 찾습니다.</p>
+   <div class="field"><label for="set-drive">내 드라이브 전체</label><select id="set-drive"><option value="off" ${dv==='off'?'selected':''}>끄기 (연결한 폴더 · 올린 자료만)</option><option value="pdf" ${dv==='pdf'?'selected':''}>PDF 전부</option><option value="docs" ${dv==='docs'?'selected':''}>문서 전부 (PDF · 워드 · 한글 · PPT · 텍스트 · 구글 문서)</option></select></div>
+   <div class="list">${S.set.libs.map(l=>`<div class="it"><span class="grow">📁 ${esc(l.name)}</span><button class="btn sm" data-a="libdel:${esc(l.id)}">빼기</button></div>`).join('')}<div class="it"><span class="grow">📁 올린 자료 <span class="note">(여기서 올린 파일 · 분류 폴더로 정리)</span></span><a class="btn sm" href="https://drive.google.com/drive/folders/${esc(S.F.up)}" target="_blank" rel="noopener">열기</a></div></div>
+   <div class="row wrapx" style="margin-top:8px"><button class="btn sm" data-a="libadd">＋ 폴더 연결</button><span class="sp"></span><button class="btn sm pri" data-a="index" ${S.idx.run?'disabled':''}>새 자료 찾아 색인</button></div>
+   <p class="note">사진 · 영상은 휴대폰 백업이 섞이지 않도록 폴더 연결이나 올리기로만 넣습니다.</p></div>
+  ${noCard&&!S.idx.run&&!CARDING?`<p class="note">AI 정리(서지 · 요약 · 주제 · 분류)가 아직 없는 자료 ${noCard}개 <button class="btn sm" data-a="cards">지금 정리하기 (AI 약 ${Math.ceil(noCard/4)}번)</button></p>`:''}
+  <div class="tabs2">${['',...C2].filter(k=>!k||catN(k)).map(k=>`<button class="${cf===k?'on':''}" data-a="libc:${esc(k)}">${k?esc(k)+' '+catN(k):'모든 분류'}</button>`).join('')}${ok.some(e=>!e.cat)?`<button class="${cf==='_none'?'on':''}" data-a="libc:_none">분류 전 ${ok.filter(e=>!e.cat).length}</button>`:''}</div>
+  <div class="tabs2">${F.map(x=>`<button class="${f===x?'on':''}" data-a="libf:${x}">${x}</button>`).join('')}</div><input type="search" id="libq" placeholder="제목 · 저자 · 폴더 · 주제로 찾기" value="${esc(S.libq)}">
+  <div class="list">${rows||'<p class="empty">자료가 없습니다.</p>'}</div>${show.length>300?`<p class="note">처음 300개만 보입니다. 찾기나 분류로 좁혀 주세요.</p>`:''}`}
+function cardModal(e){modal(`<div class="row"><h2 class="grow" style="margin:0">자료 정보 고치기</h2><button class="btn sm" data-a="close">닫기</button></div><form id="f-card" data-id="${esc(e.id)}">
+   <div class="field"><label for="c-title">제목</label><input type="text" id="c-title" value="${esc(e.title)}"></div>
+   <div class="row wrapx"><div class="field grow"><label for="c-author">저자</label><input type="text" id="c-author" value="${esc(e.author||'')}"></div><div class="field" style="width:110px"><label for="c-year">연도</label><input type="text" id="c-year" value="${esc(e.year||'')}"></div></div>
+   <div class="field"><label for="c-cat">분류</label><select id="c-cat"><option value="">분류 전</option>${cats().map(c=>`<option ${e.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+   <div class="field"><label for="c-topics">주제 태그 <span class="note">(쉼표로)</span></label><input type="text" id="c-topics" value="${esc((e.topics||[]).join(', '))}"></div>
+   <div class="field"><label for="c-sum">요약</label><textarea id="c-sum" rows="3">${esc(e.summary&&e.summary!=='(요약 없음)'?e.summary:'')}</textarea></div>
+   <p class="note">📁 ${esc(e.path||'내 드라이브')}<br>${esc(e.name)}</p><button class="btn pri big">저장</button></form>`)}
+async function folderPicker(q){modal(`<div class="row"><h2 style="margin:0" class="grow">서재 폴더 연결</h2><button class="btn sm" data-a="close">닫기</button></div><form id="f-fq" class="row" style="margin:12px 0"><input type="search" id="fq" placeholder="폴더 이름" value="${esc(q||'')}"><button class="btn">찾기</button></form><div class="list" id="fres"><p class="note">불러오는 중…</p></div>`);
+  try{await folderMap();const L=await gList(q?`mimeType='${FOLD}' and name contains '${gq(q)}' and trashed=false`:`mimeType='${FOLD}' and 'root' in parents and trashed=false`,'files(id,name,modifiedTime,parents)');const el=$('#fres');if(!el)return;const own=OWN();own.add(S.F.up);
+    el.innerHTML=L.filter(f=>!own.has(f.id)).sort((a,b)=>a.name.localeCompare(b.name,'ko')).slice(0,100).map(f=>`<div class="it"><div class="grow"><div>📁 ${esc(f.name)}</div><div class="path">${esc(pathOf((f.parents||[])[0]))}</div></div><button class="btn sm pri" data-a="libpick:${esc(f.id)}|${esc(f.name)}">연결</button></div>`).join('')||'<p class="empty">폴더가 없습니다.</p>'}catch(e){const el=$('#fres');if(el)el.innerHTML='<p class="note">폴더를 불러오지 못했습니다.</p>'}}
+/* ================= 서재 (도서관처럼 한눈에) ================= */
+const BYS=[['cat','분류'],['topic','주제'],['genre','성격'],['bible','성경'],['author','저자'],['level','수준'],['kind','파일'],['folder','폴더'],['recent','최근']];
+const BYN=Object.fromEntries(BYS);
+const PAL=['#83D9D0','#EACB87','#FFAA85','#9DB8EE','#C9A6E4','#A9D48C','#EFA3B6','#7FC6E6','#D9B48C','#B7BABF'];
+const hsh=s=>{let h=0;for(const c of String(s||''))h=(h*31+c.charCodeAt(0))>>>0;return h};
+const colorOf=k=>{const i=cats().indexOf(k);return PAL[(i>=0?i:hsh(k))%PAL.length]};
+const folderOf=e=>String(e.path||'내 드라이브').replace(/^내 드라이브 › /,'')||'내 드라이브';
+const BKN=Object.fromEntries(BOOKS.map(b=>[b[0],b[1]]));const BKO=Object.fromEntries(BOOKS.map((b,i)=>[b[0],i]));
+const grpLabel=(by,k)=>by==='bible'?(BKN[k]||k):k;
+/* 자료 하나가 많이 다루는 성경 책 (구절 태그에서) */
+function bkOf(chunks){const n={};chunks.forEach(c=>(c.refs||[]).forEach(r=>{const p=r.split('.');if(p.length===2)n[p[0]]=(n[p[0]]||0)+1}));return Object.entries(n).filter(([k,v])=>v>=2).sort((a,b)=>b[1]-a[1]).slice(0,6).map(x=>x[0])}
+function keysOf(by,e){return by==='genre'?[e.genre||'분석 전']:by==='level'?(e.level?[e.level]:[]):by==='cat'?[e.cat||'분류 전']:by==='topic'?(e.topics||[]):by==='bible'?(e.bk||[]):by==='author'?[e.author||'저자 미상']:by==='kind'?[kindOf(e)]:by==='folder'?[folderOf(e)]:[]}
+function groupsOf(by){const m=new Map();S.lib.filter(e=>e.status==='ok').forEach(e=>keysOf(by,e).forEach(k=>{if(!k)return;let a=m.get(k);if(!a){a=[];m.set(k,a)}a.push(e)}));
+  let G=[...m].map(([k,L])=>({k,L}));const C2=cats();
+  if(by==='genre')G.sort((a,b)=>{const x=GENRES.indexOf(a.k),y=GENRES.indexOf(b.k);return (x<0?99:x)-(y<0?99:y)});else if(by==='level')G.sort((a,b)=>['입문','중급','전문'].indexOf(a.k)-['입문','중급','전문'].indexOf(b.k));else if(by==='cat')G.sort((a,b)=>{const x=C2.indexOf(a.k),y=C2.indexOf(b.k);return (x<0?99:x)-(y<0?99:y)});else if(by==='bible')G.sort((a,b)=>BKO[a.k]-BKO[b.k]);else G.sort((a,b)=>b.L.length-a.L.length||a.k.localeCompare(b.k,'ko'));return G}
+const amtOf=e=>e.unit==='sec'&&e.dur?mmss(e.dur):e.pages?`${e.pages}${e.unit==='slide'?'장':'쪽'}`:'';
+/* 범위 (AI 정리에서 찾을 곳): all · drive · 폴더ID · cat:/topic:/bible:/author:/kind:/folder:/file: */
+function scopeHit(e,s){s=String(s);const i=s.indexOf(':');if(i<0)return e.root===s;const k=s.slice(0,i),v=s.slice(i+1);
+  return k==='file'?e.id===v:k==='recent'?true:keysOf(k,e).includes(v)}
+function scopeLabel(s){if(!s||s==='all')return '서재 전체';if(s==='drive')return '내 드라이브 전체';if(s===S.F.up)return '📁 올린 자료';const l=S.set.libs.find(x=>x.id===s);if(l)return '📁 '+l.name;
+  const i=s.indexOf(':');if(i<0)return s;const k=s.slice(0,i),v=s.slice(i+1);if(k==='file'){const e=S.lib.find(x=>x.id===v);return '이 자료만: '+(e?e.title:v)}return `${BYN[k]||k}: ${grpLabel(k,v)}`}
+function scopeOpts(v){const L=['all',...(S.set.drive&&S.set.drive!=='off'?['drive']:[]),...S.set.libs.map(l=>l.id),S.F.up,...groupsOf('cat').map(g=>'cat:'+g.k)];if(v&&!L.includes(v))L.splice(1,0,v);
+  return L.map(k=>`<option value="${esc(k)}" ${v===k?'selected':''}>${esc(scopeLabel(k))}</option>`).join('')}
+function spines(L){return L.slice(0,9).map(e=>`<i style="height:${58+hsh(e.id)%40}%;background:${colorOf(e.cat)}"></i>`).join('')}
+function shelfTile(by,g){return `<button class="shelf" data-a="shelf:${by}|${esc(g.k)}"><div class="spines">${spines(g.L)}</div><b>${esc(grpLabel(by,g.k))}</b><span>${g.L.length}</span></button>`}
+function bookRow(e){const by=[e.author,e.year].filter(Boolean).join(' · ');const a=amtOf(e);
+  return `<div class="bk" data-a="book:${esc(e.id)}" role="button" tabindex="0"><span class="bk-sp" style="background:${colorOf(e.cat)}"></span><div class="grow"><div class="t">${esc(e.title)}</div><div class="m">${esc(by)}${by?' · ':''}${esc(kindOf(e))}${a?' · '+a:''}</div>${e.summary&&e.summary!=='(요약 없음)'?`<div class="x">${esc(e.summary)}</div>`:''}</div><a class="btn sm" href="${gView(e.id)}" target="_blank" rel="noopener">열기 ↗</a></div>`}
+function vLib(){const ok=S.lib.filter(e=>e.status==='ok');const by=S.lv.by||'cat',key=S.lv.key;const q=lc(S.libq);const busy=S.lib.filter(e=>e.status==='wait').length;
+  const head=`<div class="libtop"><form id="f-lq" class="grow"><input type="search" id="libq" placeholder="제목 · 저자 · 주제 찾기" value="${esc(S.libq)}" enterkeyhint="search"></form><label class="btn pri" for="upf">＋ 올리기</label><input id="upf" type="file" multiple hidden accept="${ACCEPT}"></div>
+   <div id="upbox"></div><div id="idxbox">${idxHTML()}</div><div id="cardbox"></div>`;
+  if(!ok.length&&!S.idx.run&&!busy)return `<h1>내 서재</h1>${head}<div class="card hero"><b>서재를 채워 볼까요?</b><p class="note">내 구글 드라이브의 PDF를 모두 찾아 AI 색인으로 정리합니다. 원본 파일은 옮기거나 고치지 않습니다.</p><button class="btn pri big" data-a="driveall:pdf">내 드라이브의 PDF 전부 정리하기</button><p class="note">특정 폴더만 넣거나 다른 형식까지 넣으려면 <button class="btn sm" data-a="tab:manage">서재 관리</button></p></div>`;
+  if(q){const hit=ok.filter(e=>lc([e.title,e.author,e.name,e.path,(e.topics||[]).join(' '),e.cat].join(' ')).includes(q));
+    return `<h1>내 서재</h1>${head}<p class="sub">"${esc(S.libq)}" 제목 · 저자 · 주제 ${hit.length}개</p><div class="card row"><span class="grow">자료 <b>본문 내용</b>에서도 찾아볼까요?</span><button class="btn sm pri" data-a="ftsearch">본문에서 찾기</button></div><div class="books">${hit.slice(0,200).map(bookRow).join('')||'<p class="empty">없습니다.</p>'}</div>`}
+  const tops=topTopics(14);const tabs=`<div class="bys">${BYS.map(([k,l])=>`<button class="${by===k?'on':''}" data-a="by:${k}">${l}</button>`).join('')}</div>`;
+  if(key!=null&&by!=='recent'){const g=groupsOf(by).find(x=>x.k===key);const L=(g?g.L:[]).slice().sort((a,b)=>S.lv.sort==='new'?String(b.modified).localeCompare(String(a.modified)):(a.author||a.title).localeCompare(b.author||b.title,'ko'));
+    return `<div class="crumb"><button class="btn sm" data-a="shelfback">‹ ${esc(BYN[by])}</button><span class="note">${esc(BYN[by])}</span></div><h1>${esc(grpLabel(by,key))} <span class="cnt">${L.length}</span></h1>${head}
+     <div class="row wrapx" style="margin:6px 0 10px"><button class="btn sm pri" data-a="shelfmake">📝 이 책장으로 AI 정리</button><span class="sp"></span><button class="btn sm ${S.lv.sort!=='new'?'on2':''}" data-a="lsort:name">이름순</button><button class="btn sm ${S.lv.sort==='new'?'on2':''}" data-a="lsort:new">최근순</button></div>
+     <div class="books">${L.map(bookRow).join('')||'<p class="empty">자료가 없습니다.</p>'}</div>`}
+  const chunks=ok.reduce((a,e)=>a+(e.chunks||0),0);
+  const body=by==='recent'?`<div class="books">${ok.slice().sort((a,b)=>String(b.modified).localeCompare(String(a.modified))).slice(0,60).map(bookRow).join('')}</div>`
+    :(()=>{const G=groupsOf(by);return G.length?`<div class="shelves">${G.slice(0,by==='topic'?80:200).map(g=>shelfTile(by,g)).join('')}</div>`:`<p class="empty">${by==='bible'?'성경 구절을 많이 다룬 자료가 아직 없습니다.':by==='topic'?'AI 정리가 끝나면 주제 책장이 생깁니다.':'자료가 없습니다.'}</p>`})();
+  return `<h1>내 서재</h1><p class="sub">자료 ${ok.length}개 · 조각 ${chunks.toLocaleString()}개${busy?` · 정리 대기 ${busy}`:''} · <button class="linkb" data-a="tab:manage">서재 관리</button></p>${head}${by==='cat'&&tops.length?`<div class="note" style="margin:2px 0 0">많이 다룬 주제</div><div class="tagrow">${tops.map(t=>`<button class="chip lnk" data-a="shelf:topic|${esc(t)}">${esc(t)}</button>`).join('')}</div>`:''}${tabs}${body}`}
+function bookModal(e){const a=amtOf(e);const chip=(by,k)=>`<button class="chip lnk" data-a="shelf:${by}|${esc(k)}">${esc(grpLabel(by,k))}</button>`;
+  modal(`<div class="row"><span class="bk-sp" style="background:${colorOf(e.cat)};height:44px"></span><div class="grow"><h2 style="margin:0">${esc(e.title)}</h2><div class="note" style="margin:2px 0 0">${esc([e.author,e.year,kindOf(e),a].filter(Boolean).join(' · '))}</div></div><button class="btn sm" data-a="close">닫기</button></div>
+   <a class="btn pri big" style="margin:14px 0 6px" href="${gView(e.id)}" target="_blank" rel="noopener">구글 드라이브에서 열기 ↗</a>
+   ${e.claim?`<p class="claim">${esc(e.claim)}</p>`:''}${e.summary&&e.summary!=='(요약 없음)'?`<p>${esc(e.summary)}</p>`:''}
+   <div class="kv"><b>분류</b><div>${chip('cat',e.cat||'분류 전')}${e.genre?chip('genre',e.genre):''}${e.level?chip('level',e.level):''}</div></div>
+   ${(e.topics||[]).length?`<div class="kv"><b>주제</b><div>${e.topics.map(t=>chip('topic',t)).join('')}</div></div>`:''}
+   ${(e.bk||[]).length?`<div class="kv"><b>성경</b><div>${e.bk.map(k=>chip('bible',k)).join('')}</div></div>`:''}
+   ${e.author?`<div class="kv"><b>저자</b><div>${chip('author',e.author)}</div></div>`:''}
+   <div class="kv"><b>위치</b><div><button class="chip lnk" data-a="shelf:folder|${esc(folderOf(e))}">📁 ${esc(e.path||'내 드라이브')}</button></div></div>
+   ${(e.toc||[]).length?`<details><summary class="note">목차 ${e.toc.length}</summary><ol class="toc">${e.toc.map(t=>`<li>${esc(t)}</li>`).join('')}</ol></details>`:''}
+   <div class="row wrapx" style="margin-top:14px;gap:8px"><button class="btn sm pri" data-a="mkfrom:${esc(e.id)}">📝 이 자료로 AI 정리</button><button class="btn sm" data-a="ecard:${esc(e.id)}">정보 고치기</button><button class="btn sm" data-a="reidx:${esc(e.id)}">다시 색인</button></div>`)}
+/* --- 결과 --- */
+function vDoc(){const d=S.doc;if(!d)return '<p class="empty">자료가 없습니다.</p>';const cb=n=>{const x=d.sources.find(s=>s.s===n);return x?`<button class="cite" data-a="src:${n}" title="${esc(citeOf(x)+' · '+(x.path||''))}">${esc(S.set.cite==='short'?x.title.slice(0,10):(x.author||x.title).slice(0,8))}${pg(x)?' '+esc(pg(x)):''}</button>`:''};
+  const bib=docMd(d).split(/^## 참고문헌\s*$/m)[1]||'';const v=d.verify||{};
+  return `<div class="row wrapx" style="margin-bottom:10px"><button class="btn sm" data-a="tab:make">‹ 만들기</button><span class="sp"></span><button class="btn sm pri" data-a="word">Word</button><button class="btn sm" data-a="pdf">PDF</button><button class="btn sm" data-a="srcs">근거 ${d.sources.length}</button></div>
+  <div class="doc"><h1>${esc(d.title)}</h1><p class="note">${esc(d.at.slice(0,10))} · 근거 ${d.sources.length}곳 · 인용 ${v.quotes||0}건${v.bad?` · <span style="color:var(--bad)">원문과 다른 인용 ${v.bad}건 (⚠ 표시)</span>`:''}${v.nocite?` · <span style="color:var(--warn)">근거 표시 없는 문장 ${v.nocite}개</span>`:''}</p>
+   ${d.inputs&&(d.inputs.ref||d.inputs.topic)?`<p class="note">${d.inputs.ref?'본문: '+esc(d.inputs.ref):''}${d.inputs.topic?'주제: '+esc(d.inputs.topic):''}</p>`:''}
+   <div class="legend"><span style="color:var(--verse)">성경구절</span><span style="color:var(--q)">질문</span><span style="color:var(--key)">핵심 문장</span><span style="color:var(--ink)">본문</span></div><p class="lock">🔒 근거는 모두 내 구글 드라이브 서재(AI 색인)에서 찾았습니다. 근거 표시를 누르면 원문 · 드라이브 위치 · 원본 열기가 나옵니다.</p>
+   ${d.sections.map((s,i)=>`<div class="sech"><h2>${esc(s.h)}</h2><button class="btn sm" data-a="rw:${i}">다시 쓰기</button></div>${md2html(s.md,cb)}`).join('')}
+   ${bib.trim()?`<h2>참고문헌</h2>${md2html(bib,()=>'')}`:''}</div>`}
+const canPage=x=>['pdf','gdoc','gslide'].includes(x.ty)&&x.p0&&x.u!=='none'&&x.u!=='sec';
+function srcModal(n){const d=S.doc,x=d.sources.find(s=>s.s===n);if(!x)return;const loc=pg(x);const qs=[];
+  d.sections.forEach(sec=>String(sec.md).split(/(?<=[.!?])\s+/).forEach(sn=>{if(sn.includes(`[S${n}]`))(sn.match(/["“][^"“”\n]{6,300}["”]/g)||[]).forEach(q=>qs.push(q.slice(1,-1)))}));
+  let body=esc(x.text);qs.forEach(q=>{const e=esc(q);if(body.includes(e))body=body.split(e).join(`<mark>${e}</mark>`)});
+  modal(`<div class="row"><b class="grow">[S${n}] ${esc(citeOf(x))}</b><button class="btn sm" data-a="close">닫기</button></div>
+   <div class="srcmeta"><div>📁 ${esc(x.path||'내 드라이브')}</div><div>${esc(x.name||x.title)} · ${esc(x.kind||'')}${x.cat?' · '+esc(x.cat):''}${loc?' · <b>'+esc(loc)+'</b>':''}</div></div>
+   <div class="row wrapx" style="margin:10px 0;gap:8px"><a class="btn sm pri" href="${gView(x.fileId)}" target="_blank" rel="noopener">구글 드라이브에서 열기 ↗</a>${canPage(x)?`<button class="btn sm" data-a="pv:${n}">${esc(loc)} 원문 쪽 바로 보기</button>`:''}</div>
+   ${x.u==='sec'?`<p class="note">영상 · 음성은 드라이브에서 연 뒤 ${esc(loc)} 지점으로 옮겨 들으세요.</p>`:''}<p class="quote">${body}</p>`)}
+function srcsModal(){const d=S.doc;modal(`<div class="row"><h2 class="grow" style="margin:0">근거 ${d.sources.length}곳</h2><button class="btn sm" data-a="close">닫기</button></div><p class="note">모두 내 구글 드라이브 서재에서 찾은 근거입니다.</p><div class="list">${d.sources.map(x=>`<div class="it"><div class="grow"><div class="t">[S${x.s}] ${esc(citeOf(x))}</div><div class="path">📁 ${esc(x.path||'내 드라이브')}</div><div class="x">${esc(x.text.slice(0,200))}…</div></div><div class="itr"><button class="btn sm" data-a="src:${x.s}">보기</button><a class="btn sm" style="margin-top:6px" href="${gView(x.fileId)}" target="_blank" rel="noopener">드라이브</a></div></div>`).join('')}</div>`)}
+/* 원문 쪽 바로 보기: 드라이브의 PDF를 필요한 부분만 받아 그 쪽을 그리고, 근거 부분을 노랗게 */
+let PV=null;
+async function pvOpen(x){const title=citeOf(x);modal(`<div class="row"><b class="grow">${esc(title)}</b><button class="btn sm" data-a="close">닫기</button></div><div class="row" style="margin:8px 0"><button class="btn sm" data-a="pvgo:-1">‹ 앞쪽</button><span class="grow note" id="pvlbl" style="text-align:center"></span><button class="btn sm" data-a="pvgo:1">뒤쪽 ›</button></div><div id="pvbox" class="pvbox"><p class="note">원문 쪽을 불러오는 중…</p></div><div class="row" style="margin-top:10px"><a class="btn sm pri" href="${gView(x.fileId)}" target="_blank" rel="noopener">구글 드라이브에서 열기 ↗</a></div>`);
+  try{const L=await pdfLib();if(!PV||PV.id!==x.fileId){if(PV)try{PV.task.destroy()}catch(e){}const id=encodeURIComponent(x.fileId);const url=x.ty==='pdf'?`${DAPI}/${id}?alt=media`:`${DAPI}/${id}/export?mimeType=application%2Fpdf`;
+      const task=L.getDocument({url,httpHeaders:{Authorization:'Bearer '+GT.tok},withCredentials:false,...PDFOPT,disableAutoFetch:true,disableStream:true,rangeChunkSize:262144});PV={id:x.fileId,task,doc:await task.promise,L}}
+    PV.page=Math.min(Math.max(1,x.p0||1),PV.doc.numPages);PV.hl=x.text;PV.hp=new Set([x.p0,x.p1]);await pvDraw()}
+  catch(e){const b=$('#pvbox');if(b)b.innerHTML='<p class="note">이 기기에서 원문 쪽을 그리지 못했습니다. 구글 드라이브에서 열어 주세요.</p>'}}
+async function pvDraw(){const box=$('#pvbox');if(!box||!PV)return;const p=await PV.doc.getPage(PV.page);const w=Math.min(box.clientWidth||600,900);const v1=p.getViewport({scale:1});const dpr=Math.min(2,window.devicePixelRatio||1);const vp=p.getViewport({scale:w/v1.width*dpr});
+  const cv=document.createElement('canvas');cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);cv.style.width='100%';const ctx=cv.getContext('2d');await p.render({canvasContext:ctx,viewport:vp}).promise;
+  if(PV.hp.has(PV.page))try{const tc=await p.getTextContent();const hz=nzq(PV.hl||'');ctx.fillStyle='rgba(224,180,92,.38)';for(const it of tc.items){const z=nzq(it.str);if(z.length<4||!hz.includes(z))continue;const t=PV.L.Util.transform(vp.transform,it.transform);const h=Math.hypot(t[2],t[3]);ctx.fillRect(t[4],t[5]-h*0.9,(it.width||0)*vp.scale,h*1.15)}}catch(e){}
+  box.innerHTML='';box.appendChild(cv);const l=$('#pvlbl');if(l)l.textContent=`${PV.page} / ${PV.doc.numPages}쪽`}
+/* --- 설정 --- */
+function vSet(){const ck=(k,label,def=true)=>`<label class="chk"><input type="checkbox" id="set-${k}" ${(S.set[k]??def)!==false?'checked':''}> ${label}</label>`;
+  return `<h1>설정</h1>
+  <div class="card"><b>나의 연구 철학 · 원칙</b><p class="note">모든 자료를 만들 때 AI가 이 원칙을 함께 지킵니다. 신학 입장, 해석 원칙, 글의 태도를 적어 두세요.</p><textarea id="set-philo" rows="8">${esc(S.set.philo||PHILO0)}</textarea><div class="row" style="margin-top:8px"><button class="btn sm pri" data-a="philosave">저장</button><button class="btn sm" data-a="philoreset">처음 문구로</button></div></div>
+  <div class="card"><b>서재 관리</b><p class="note">서재 범위(내 드라이브 전체 · 연결 폴더), 색인 상태, 실패 · 자막 필요 자료를 봅니다.</p><button class="btn sm" data-a="tab:manage">서재 관리 열기</button></div>
+  <div class="card"><b>자동 정리</b>${ck('autoScan','열 때마다 새 자료를 찾아 색인')}${ck('autoCard','색인 뒤 AI 정리 (서지 · 요약 · 주제 · 분류) 자동으로')}${ck('tidy','올린 파일을 분류 폴더로 옮기기')}${ck('rename','올린 파일 이름을 "[저자] 제목"으로 바꾸기')}${ck('strict','결과물에서 근거 표시가 없는 문장을 알려 주기')}</div>
+  <div class="card"><b>분류</b><p class="note">한 줄에 하나. AI가 자료마다 이 중 하나를 고르고, 올린 자료는 이 이름의 폴더로 정리됩니다.</p><textarea id="set-cats" rows="7">${esc(cats().join('\n'))}</textarea><div class="row" style="margin-top:8px"><button class="btn sm pri" data-a="catsave">저장</button><button class="btn sm" data-a="recat">모든 자료 다시 정리 (AI)</button></div></div>
+  <div class="card"><b>인용 표기</b><select id="set-cite" style="margin-top:8px"><option value="full" ${S.set.cite!=='short'?'selected':''}>(저자, 『제목』, p.12)</option><option value="short" ${S.set.cite==='short'?'selected':''}>『제목』 p.12</option></select></div>
+  <div class="card"><b>AI 연결</b><p class="note">Apps Script 중계로 AI를 씁니다. AI 키는 중계에만 있습니다.</p><button class="btn sm" data-a="aitest">연결 확인</button> <span id="aires" class="note"></span></div>
+  <div class="card"><b>영상 · 음성 받아쓰기 (선택)</b><p class="note">${C.mediaUrl?'받아쓰기 중계가 연결되어 있습니다. 영상 · 음성 내용과 글자 없는 사진도 색인합니다.':'연결 안 됨. 같은 이름의 자막 파일(.srt · .vtt)이 있으면 없어도 됩니다. 영상 내용까지 색인하려면 README의 media-relay.gs를 배포하고 config.js에 mediaUrl을 넣으세요.'}</p>${C.mediaUrl?'<button class="btn sm" data-a="mediatest">연결 확인</button> <span id="mres" class="note"></span>':''}</div>
+  <div class="card"><b>드라이브</b><p class="note">색인 · 지침 · 결과물 · 올린 자료는 내 드라이브 "${esc(C.rootName||'도라에몽 서재')}" 폴더에 있습니다. 다른 원본은 읽기만 합니다.</p><a class="btn sm" href="https://drive.google.com/drive/folders/${esc(S.F.root)}" target="_blank" rel="noopener">폴더 열기</a> <button class="btn sm" data-a="cache">기기 색인 사본 지우기</button></div>
+  <div class="card"><b>계정</b><p class="note">${esc(S.me&&S.me.email||'')}</p><button class="btn sm" data-a="logout">로그아웃</button></div>
+  <p class="note">${esc(APP)} · PDF 글 뽑기와 쪽 보기에 pdf.js(Mozilla, Apache-2.0)를 씁니다.</p>`}
+/* --- 만들기 --- */
+function jobHTML(){const j=S.job;if(!j)return '';const found=(j.found||[]).map(d=>IX.docs[d]).filter(Boolean);const books=[...new Set(found.map(x=>IX.books[x.b].title))].slice(0,6);
+  return `<div class="card"><div class="steps">${STEPS.map((s,i)=>`<span class="${i<j.step?'done':i===j.step&&!j.err?'on':''}">${i<j.step?'✓ ':''}${s}</span>`).join('')}</div>${j.err?`<p style="color:var(--bad)">${esc(j.err)}</p><button class="btn sm" data-a="jobclear">닫기</button>`:`<p style="margin:6px 0">${esc(j.msg||'')}</p>${books.length?`<p class="note">찾은 책: ${books.map(esc).join(' · ')}</p>`:''}<p class="note">보통 1~3분 걸립니다. 화면을 닫지 마세요.</p>`}</div>`}
+function vMake(){const mk=S.mk,g=guideOf(mk.guide);const ok=S.lib.filter(e=>e.status==='ok').length;
+  if(S.job&&!S.job.err)return `<h1>만드는 중</h1><div id="jobbox">${jobHTML()}</div>`;
+  return `<div class="row"><h1 class="grow">AI 정리</h1><button class="btn sm" data-a="tab:guides">지침 관리</button></div><p class="sub">지침을 고르고 본문이나 주제, 내 생각을 넣으면 내 구글 드라이브 서재 ${ok}개 자료에서만 근거를 찾아, 내 연구 철학과 지침대로 한 번에 만듭니다.</p>
+  <div id="jobbox">${jobHTML()}</div>
+  <div class="gcards">${S.guides.map(x=>`<button class="gcard ${x.id===g.id?'on':''}" data-a="pickg:${esc(x.id)}"><b>${esc(x.name)}</b><span>${esc(x.desc||'')}</span></button>`).join('')}<button class="gcard" data-a="gnew"><b>＋ 새 지침</b><span>내가 원하는 결과물 모양을 저장</span></button></div>
+  <div class="card">
+   ${g.input==='passage'?`<div class="field"><label for="mk-ref">본문</label><input type="text" id="mk-ref" placeholder="예: 롬 8:1-11 · 로마서 8장" value="${esc(mk.ref)}"></div>
+   <div class="field"><label for="mk-ptext">본문 글 <span class="note">(선택 · 쓰는 역본을 붙여 넣기)</span></label><textarea id="mk-ptext" rows="3">${esc(mk.ptext)}</textarea></div>`
+   :`<div class="field"><label for="mk-topic">주제</label><input type="text" id="mk-topic" placeholder="예: AI 시대의 하나님의 형상" value="${esc(mk.topic)}"></div>`}
+   <div class="field"><label for="mk-idea">내 생각 <span class="note">(글이나 파일)</span></label><textarea id="mk-idea" rows="4" placeholder="내 아이디어, 방향, 질문을 적어 주세요">${esc(mk.idea)}</textarea>
+    <div class="row" style="margin-top:6px"><label class="btn sm" for="mk-file">파일 붙이기</label><input id="mk-file" type="file" accept=".pdf,.docx,.hwp,.hwpx,.pptx,.txt,.md" hidden><span class="note grow">${mk.ideaName?esc(mk.ideaName)+` · ${mk.ideaText.length.toLocaleString()}자 <button class="btn sm" data-a="ideaclr">빼기</button>`:'PDF · Word · 한글 · PPT · 텍스트 (근거가 아니라 내 생각으로만 씁니다)'}</span></div></div>
+   <div class="row wrapx"><div class="field grow" style="min-width:180px"><label for="mk-scope">찾을 범위</label><select id="mk-scope">${scopeOpts(mk.scope)}</select></div><div class="field grow" style="min-width:180px"><label for="mk-extra">추가 요청 <span class="note">(선택)</span></label><input type="text" id="mk-extra" placeholder="예: 바울 신학 중심으로" value="${esc(mk.extra)}"></div></div>
+   ${S.pins.length?`<p class="note">📌 검색에서 담은 근거 ${S.pins.length}곳을 꼭 넣습니다. <button class="btn sm" data-a="pinclr">비우기</button></p>`:''}
+   <button class="btn pri big" data-a="make">${esc(g.name)} 만들기</button>
+   <p class="note">지침: ${esc(g.length||'')} · 목차 ${g.outline.length}개 · AI ${2+Math.ceil(g.outline.length/2)}번 사용</p></div>`}
+/* --- 검색 --- */
+function vSearch(){const R=S.res;return `<div class="crumb"><button class="btn sm" data-a="tab:lib">‹ 내 서재</button></div><h1>본문 검색</h1><form id="f-q" class="row"><input type="search" id="q" placeholder="낱말 · 구절(예: 롬 8:28) · 저자" value="${esc(S.q)}" enterkeyhint="search"><button class="btn pri">찾기</button></form><p class="note" id="ixmsg">${esc(S.ixMsg||'')}</p>
+  ${!S.lib.some(e=>e.status==='ok')?`<p class="empty">아직 색인한 자료가 없습니다. <button class="btn sm" data-a="tab:lib">서재로</button></p>`:''}
+  ${R?`<div class="row"><b class="grow">${R.length}곳</b>${R.length?`<button class="btn sm" data-a="q2make">이 주제로 만들기</button>`:''}</div><div class="list">${R.map(r=>{const x=IX.docs[r.d],e=IX.books[x.b];const on=S.pins.includes(r.d);return `<div class="it"><div class="grow"><div class="t">${esc(bookLabel(e))}</div><div class="m">${pg(x)} · ${esc(kindOf(e))}${e.cat?' · '+esc(e.cat):''}</div><div class="path">📁 ${esc(e.path||'내 드라이브')}</div><div class="x">${snippet(x.text,S.q)}</div><div class="row wrapx" style="margin-top:6px;gap:6px"><a class="btn sm" href="${gView(e.id)}" target="_blank" rel="noopener">드라이브</a>${canPage({ty:typeOf({mimeType:e.mime,name:e.name}),p0:x.p0,u:x.u})?`<button class="btn sm" data-a="pvx:${r.d}">${esc(pg(x))} 보기</button>`:''}<button class="btn sm" data-a="chunk:${r.d}">전체 보기</button><button class="btn sm ${on?'pri':''}" data-a="pin:${r.d}">${on?'📌 담음':'📌 근거로 담기'}</button></div></div></div>`}).join('')||'<p class="empty">찾은 곳이 없습니다.</p>'}</div>`:''}`}
+async function doSearch(q){S.q=q;if(!q.trim()){S.res=null;render();return}if(!IX.ready){S.ixMsg='색인을 불러오는 중…';render()}await ensureIndex();S.res=searchAll(q,{limit:40});render()}
+/* --- 서재 --- */
+/* --- 보관함 --- */
+function vBox(){if(S.box===null||S.box===undefined){S.box='loading';gList(`'${S.F.out}' in parents and trashed=false and mimeType='application/json'`,'files(id,name,modifiedTime)').then(L=>{S.box=L.sort((a,b)=>b.modifiedTime.localeCompare(a.modifiedTime));if(S.tab==='box')render()}).catch(()=>{S.box=[];render()})}
+  return `<h1>보관함</h1><p class="sub">만든 자료는 드라이브 "${esc(C.rootName||'도라에몽 서재')} / 결과물"에 저장됩니다.</p>${S.box==='loading'?'<p class="note">불러오는 중…</p>':`<div class="list">${S.box.map(f=>`<div class="it"><div class="grow"><div class="t">${esc(f.name.replace(/\.json$/,''))}</div><div class="m">${esc(f.modifiedTime.slice(0,10))}</div></div><button class="btn sm" data-a="open:${esc(f.id)}">열기</button></div>`).join('')||'<p class="empty">아직 만든 자료가 없습니다.</p>'}</div>`}`}
+/* --- 결과 --- */
+/* --- 지침 --- */
+function vGuides(){return `<h1>지침</h1><p class="sub">결과물마다 목차 · 분량 · 말투 · 꼭 넣을 것을 저장해 두면, 본문이나 주제만 넣고 바로 만듭니다.</p>
+  <div class="row wrapx"><button class="btn sm pri" data-a="gnew">＋ 새 지침</button><button class="btn sm" data-a="gai">AI로 지침 만들기</button></div>
+  <div class="list" style="margin-top:8px">${S.guides.map(g=>`<div class="it"><div class="grow"><div class="t">${esc(g.name)}</div><div class="m">${g.input==='passage'?'본문':'주제'} · ${esc(g.length||'')} · 목차 ${g.outline.length}개</div><div class="x">${g.outline.map(o=>esc(o.h)).join(' → ')}</div></div><div class="row"><button class="btn sm" data-a="gedit:${esc(g.id)}">고치기</button><button class="btn sm" data-a="gcopy:${esc(g.id)}">복사</button></div></div>`).join('')}</div>`}
+function guideModal(g){const isNew=!g;g=g||{id:'g'+Date.now(),name:'',input:'topic',desc:'',length:'A4 5쪽',tone:'',outline:[{h:'',ask:''}],must:[],avoid:[]};
+  modal(`<div class="row"><h2 class="grow" style="margin:0">${isNew?'새 지침':'지침 고치기'}</h2><button class="btn sm" data-a="close">닫기</button></div><form id="f-guide" data-id="${esc(g.id)}">
+   <div class="field"><label for="g-name">이름</label><input type="text" id="g-name" required value="${esc(g.name)}" placeholder="예: 설교 개요"></div>
+   <div class="row wrapx"><div class="field grow"><label for="g-input">넣는 것</label><select id="g-input"><option value="passage" ${g.input==='passage'?'selected':''}>본문 (성경 구절)</option><option value="topic" ${g.input!=='passage'?'selected':''}>주제</option></select></div><div class="field grow"><label for="g-len">분량</label><input type="text" id="g-len" value="${esc(g.length)}" placeholder="예: A4 5쪽"></div></div>
+   <div class="field"><label for="g-desc">한 줄 설명</label><input type="text" id="g-desc" value="${esc(g.desc||'')}"></div>
+   <div class="field"><label for="g-tone">말투 · 독자</label><input type="text" id="g-tone" value="${esc(g.tone||'')}" placeholder="예: 청년부 교사용, 쉬운 말"></div>
+   <div class="field"><label for="g-out">목차 <span class="note">(한 줄에 하나 · "제목 | 무엇을 쓸지")</span></label><textarea id="g-out" rows="7">${esc(g.outline.map(o=>o.h+(o.ask?' | '+o.ask:'')).join('\n'))}</textarea></div>
+   <div class="field"><label for="g-must">꼭 넣을 것 <span class="note">(한 줄에 하나)</span></label><textarea id="g-must" rows="2">${esc((g.must||[]).join('\n'))}</textarea></div>
+   <div class="field"><label for="g-avoid">피할 것 <span class="note">(한 줄에 하나)</span></label><textarea id="g-avoid" rows="2">${esc((g.avoid||[]).join('\n'))}</textarea></div>
+   <div class="field"><label>먼저 찾을 분류 <span class="note">(선택)</span></label><div class="chks">${cats().map(c=>`<label class="chk"><input type="checkbox" name="g-pc" value="${esc(c)}" ${(g.preferCats||[]).includes(c)?'checked':''}> ${esc(c)}</label>`).join('')}</div></div>
+   <div class="row"><button class="btn pri grow">저장</button>${isNew?'':`<button type="button" class="btn" data-a="gdel:${esc(g.id)}">지우기</button>`}</div></form>`)}
+/* --- 설정 --- */
+
+/* ================= 동작 ================= */
+document.addEventListener('click',async ev=>{if(ev.target.closest('a[href]'))return;const b=ev.target.closest('[data-a]');if(!b)return;const raw=b.dataset.a;const i=raw.indexOf(':');const a=i<0?raw:raw.slice(0,i),arg=i<0?'':raw.slice(i+1);
+  if(a==='ovclose'){if(ev.target===b)closeModal();return}
+  if(a==='close'){closeModal();return}
+  if(a==='login'){gSignIn();return}
+  if(a==='logout'){gSignOut();return}
+  if(a==='reload'){location.reload();return}
+  if(a==='tab'){if(arg==='lib'&&S.tab!=='lib')S.libq='';S.tab=arg;if(arg==='box')S.box=null;window.scrollTo(0,0);render();if(arg==='search')setTimeout(()=>$('#q')?.focus(),0);return}
+  if(a==='pickg'){S.mk.guide=arg;render();return}
+  if(a==='make'){makeDoc();return}
+  if(a==='jobclear'){S.job=null;render();return}
+  if(a==='ideaclr'){S.mk.ideaName='';S.mk.ideaText='';render();return}
+  if(a==='pinclr'){S.pins=[];render();return}
+  if(a==='pin'){const d=+arg;S.pins=S.pins.includes(d)?S.pins.filter(x=>x!==d):[...S.pins,d];render();return}
+  if(a==='chunk'){const x=IX.docs[+arg],e=IX.books[x.b];modal(`<div class="row"><b class="grow">${esc(bookLabel(e))} ${pg(x)}</b><button class="btn sm" data-a="close">닫기</button></div><p style="white-space:pre-wrap;font-size:14px;line-height:1.7">${esc(x.text)}</p><a class="btn sm" href="${gView(e.id)}" target="_blank" rel="noopener">원본 열기</a>`);return}
+  if(a==='q2make'){const g=S.guides.find(x=>x.input==='topic');if(g)S.mk.guide=g.id;S.mk.topic=S.q;S.tab='make';render();return}
+  if(a==='libadd'){folderPicker('');return}
+  if(a==='libpick'){const [id,...nm]=arg.split('|');if(!S.set.libs.some(l=>l.id===id)){S.set.libs.push({id,name:nm.join('|')});await saveSet()}closeModal();render();toast('연결했습니다. 색인을 시작합니다');runIndex();return}
+  if(a==='libdel'){if(!confirm('이 폴더를 서재에서 뺄까요? (드라이브 파일은 그대로입니다)'))return;S.set.libs=S.set.libs.filter(l=>l.id!==arg);await saveSet();S.lib=S.lib.filter(e=>e.root!==arg);saveLib(true);ixDirty();render();return}
+  if(a==='index'){runIndex();return}
+  if(a==='reidx'){const e=S.lib.find(x=>x.id===arg);if(e){e.status='wait';e.tries=0;runIndex([e])}return}
+  if(a==='libf'){S.libf=arg;render();return}
+  if(a==='cards'){autoCards(true);return}
+  if(a==='idxstop'){S.idx.stop=true;toast('지금 자료까지 하고 멈춥니다');return}
+  if(a==='driveall'){S.set.drive=arg||'pdf';await saveSet();render();runIndex();return}
+  if(a==='libc'){S.libc=arg;render();return}
+  if(a==='by'){S.lv={by:arg,key:null,sort:S.lv.sort};S.libq='';render();window.scrollTo(0,0);return}
+  if(a==='shelf'){const k=arg.indexOf('|');closeModal();S.libq='';S.tab='lib';S.lv={by:arg.slice(0,k),key:arg.slice(k+1),sort:S.lv.sort};render();window.scrollTo(0,0);return}
+  if(a==='shelfback'){S.lv.key=null;render();return}
+  if(a==='lsort'){S.lv.sort=arg;render();return}
+  if(a==='book'){const e=S.lib.find(x=>x.id===arg);if(e)bookModal(e);return}
+  if(a==='mkfrom'){closeModal();S.mk.scope='file:'+arg;S.tab='make';render();window.scrollTo(0,0);toast('이 자료 안에서만 근거를 찾습니다');return}
+  if(a==='shelfmake'){S.mk.scope=S.lv.by+':'+S.lv.key;const g=S.guides.find(x=>x.input==='topic');if(g&&guideOf(S.mk.guide).input!=='topic')S.mk.guide=g.id;if(!S.mk.topic&&S.lv.by==='topic')S.mk.topic=S.lv.key;S.tab='make';render();window.scrollTo(0,0);return}
+  if(a==='ftsearch'){S.tab='search';doSearch(S.libq);return}
+  if(a==='ecard'){const e=S.lib.find(x=>x.id===arg);if(e)cardModal(e);return}
+  if(a==='pv'){const x=S.doc&&S.doc.sources.find(s=>s.s===+arg);if(x)pvOpen(x);return}
+  if(a==='pvx'){const x=IX.docs[+arg],e=x&&IX.books[x.b];if(e)pvOpen({fileId:e.id,ty:typeOf({mimeType:e.mime,name:e.name}),title:e.title,author:e.author,p0:x.p0,p1:x.p1,u:x.u,text:x.text});return}
+  if(a==='pvgo'){if(PV){const n=PV.page+(+arg);if(n>=1&&n<=PV.doc.numPages){PV.page=n;pvDraw()}}return}
+  if(a==='philosave'){S.set.philo=$('#set-philo').value.trim()||PHILO0;await saveSet();toast('연구 철학을 저장했습니다. 다음 자료부터 적용됩니다');return}
+  if(a==='philoreset'){$('#set-philo').value=PHILO0;return}
+  if(a==='catsave'){const v=$('#set-cats').value.split('\n').map(x=>x.trim()).filter(Boolean);if(!v.length){toast('분류를 한 줄 이상 적어 주세요');return}S.set.cats=v;await saveSet();toast('분류를 저장했습니다');return}
+  if(a==='recat'){if(!confirm('모든 자료의 AI 정리(요약 · 주제 · 분류)를 다시 만들까요? 자료 4개에 AI를 1번 씁니다.'))return;S.lib.forEach(e=>{if(e.status==='ok'){e.summary='';e.cardFail=0}});S.tab='lib';render();autoCards(true);return}
+  if(a==='mediatest'){const el=$('#mres');el.textContent='확인 중…';try{const r=await media('ping',{});el.textContent='✓ 연결됨 '+(r.model||'')}catch(e){el.textContent=e.message||'연결 안 됨'}return}
+  if(a==='open'){toast('여는 중…');try{S.doc=JSON.parse(await gRead(arg));S.tab='doc';render()}catch(e){toast('열지 못했습니다')}return}
+  if(a==='src'){srcModal(+arg);return}
+  if(a==='srcs'){srcsModal();return}
+  if(a==='word'){exportWord();return}
+  if(a==='pdf'){exportPdf();return}
+  if(a==='rw'){const n=+arg;modal(`<div class="row"><h2 class="grow" style="margin:0">"${esc(S.doc.sections[n].h)}" 다시 쓰기</h2><button class="btn sm" data-a="close">닫기</button></div><div class="tabs2">${['더 자세히','더 짧게','다른 해석도 함께','근거를 더 촘촘히','쉬운 말로'].map(x=>`<button data-a="rwgo:${n}|${x}">${x}</button>`).join('')}</div><form id="f-rw" data-n="${n}" class="row"><input type="text" id="rwhow" placeholder="직접 적기"><button class="btn pri">다시 쓰기</button></form>`);return}
+  if(a==='rwgo'){const [n,...h]=arg.split('|');closeModal();rewriteSec(+n,h.join('|'));return}
+  if(a==='gnew'){guideModal(null);return}
+  if(a==='gedit'){guideModal(S.guides.find(g=>g.id===arg));return}
+  if(a==='gcopy'){const g=S.guides.find(x=>x.id===arg);if(g){const c=JSON.parse(JSON.stringify(g));c.id='g'+Date.now();c.name=g.name+' (복사)';S.guides.push(c);await saveGuides();render();guideModal(c)}return}
+  if(a==='gdel'){if(S.guides.length<=1){toast('지침은 하나 이상 있어야 합니다');return}if(!confirm('이 지침을 지울까요?'))return;S.guides=S.guides.filter(g=>g.id!==arg);if(S.mk.guide===arg)S.mk.guide=S.guides[0].id;await saveGuides();closeModal();render();return}
+  if(a==='gai'){modal(`<div class="row"><h2 class="grow" style="margin:0">AI로 지침 만들기</h2><button class="btn sm" data-a="close">닫기</button></div><p class="note">어떤 자료를 어떤 모양으로 받고 싶은지 말하듯 적으세요.</p><form id="f-gai"><textarea id="gai-t" rows="6" placeholder="예: 청년부 성경공부 교안. 본문 하나로 도입 질문, 본문 관찰, 해석, 나눔 질문 5개, 적용. A4 3쪽, 쉬운 말."></textarea><button class="btn pri big" style="margin-top:10px">지침 만들기</button></form>`);return}
+  if(a==='aitest'){const el=$('#aires');el.textContent='확인 중…';try{const t=await ai('"연결됨"이라고만 답해.',{tier:'fast',max:20});el.textContent='✓ '+t.trim().slice(0,30)}catch(e){el.textContent=aiErr(e)}return}
+  if(a==='cache'){await idbClear();ixDirty();toast('기기 사본을 지웠습니다. 다음 검색 때 드라이브에서 다시 받습니다');return}
+});
+document.addEventListener('submit',async ev=>{const f=ev.target;ev.preventDefault();
+  if(f.id==='f-q'){doSearch($('#q').value);return}
+  if(f.id==='f-lq'){return}
+  if(f.id==='f-card'){const e=S.lib.find(x=>x.id===f.dataset.id);if(!e)return;const cat=$('#c-cat').value;Object.assign(e,{title:$('#c-title').value.trim()||e.title,author:$('#c-author').value.trim(),year:$('#c-year').value.trim(),topics:$('#c-topics').value.split(/[,·]/).map(x=>x.trim()).filter(Boolean),summary:$('#c-sum').value.trim()||e.summary||'(요약 없음)'});
+    if(cat!==(e.cat||'')){e.cat=cat;e.tidied=null}saveLib(true);ixDirty();closeModal();render();toast('저장했습니다');tidyAll();return}
+  if(f.id==='f-fq'){folderPicker($('#fq').value.trim());return}
+  if(f.id==='f-rw'){const n=+f.dataset.n,h=$('#rwhow').value.trim();closeModal();rewriteSec(n,h);return}
+  if(f.id==='f-guide'){const id=f.dataset.id;const lines=s=>$(s).value.split('\n').map(x=>x.trim()).filter(Boolean);
+    const outline=lines('#g-out').map(l=>{const [h,...r]=l.split('|');return {h:h.trim(),ask:r.join('|').trim()}}).filter(o=>o.h);if(!outline.length){toast('목차를 한 줄 이상 적어 주세요');return}
+    const g={id,name:$('#g-name').value.trim()||'새 지침',input:$('#g-input').value,length:$('#g-len').value.trim(),desc:$('#g-desc').value.trim(),tone:$('#g-tone').value.trim(),outline,must:lines('#g-must'),avoid:lines('#g-avoid'),preferCats:[...f.querySelectorAll('input[name=g-pc]:checked')].map(x=>x.value)};
+    const k=S.guides.findIndex(x=>x.id===id);if(k>=0)S.guides[k]=Object.assign(S.guides[k],g);else S.guides.push(g);S.mk.guide=id;await saveGuides();closeModal();render();toast('지침을 저장했습니다');return}
+  if(f.id==='f-gai'){const t=$('#gai-t').value.trim();if(!t)return;const btn=f.querySelector('button');btn.disabled=true;btn.textContent='만드는 중…';
+    try{const r=await aiJSON(`사용자가 원하는 결과물 설명을 보고 자료 만들기 지침을 짠다. 근거는 사용자의 구글 드라이브 신학 서재(AI 색인)에서만 찾는다.\n사용자의 연구 철학 · 원칙:\n${S.set.philo||PHILO0}\n설명: ${t}\nJSON: {"name":"짧은 이름","input":"passage 또는 topic","desc":"한 줄 설명","length":"A4 n쪽","tone":"말투와 독자","outline":[{"h":"목차","ask":"무엇을 쓸지"}],"must":["꼭 넣을 것"],"avoid":["피할 것"]}`,{tier:'fast',max:1500});
+      closeModal();guideModal({id:'g'+Date.now(),name:r.name||'',input:r.input==='passage'?'passage':'topic',desc:r.desc||'',length:r.length||'',tone:r.tone||'',outline:(r.outline||[]).filter(o=>o&&o.h),must:r.must||[],avoid:r.avoid||[]});toast('확인하고 저장을 눌러 주세요')}
+    catch(e){btn.disabled=false;btn.textContent='지침 만들기';toast(aiErr(e))}return}
+});
+document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.classList&&ev.target.classList.contains('bk')){ev.target.click()}});
+document.addEventListener('input',ev=>{const t=ev.target,id=t.id;const map={'mk-ref':'ref','mk-ptext':'ptext','mk-topic':'topic','mk-idea':'idea','mk-extra':'extra'};
+  if(map[id]){S.mk[map[id]]=t.value;return}
+  if(id==='libq'){S.libq=t.value;const y=t.selectionStart;render();const x=$('#libq');if(x){x.focus();x.setSelectionRange(y,y)}return}});
+document.addEventListener('change',async ev=>{const t=ev.target,id=t.id;
+  if(id==='mk-scope'){S.mk.scope=t.value;return}
+  if(id==='set-drive'){S.set.drive=t.value;await saveSet();if(t.value!=='off'){toast('내 드라이브 전체를 찾아 색인합니다');runIndex()}else{toast('내 드라이브 전체 색인을 껐습니다');runIndex(null,null,true)}return}
+  if(t.type==='checkbox'&&/^set-/.test(id)){S.set[id.slice(4)]=t.checked;saveSet();toast('저장했습니다');return}
+  if(id==='set-cite'){S.set.cite=t.value;saveSet();toast('저장했습니다');return}
+  if(id==='upf'&&t.files.length){const fs=[...t.files];t.value='';uploadFiles(fs);return}
+  if(id==='mk-file'&&t.files.length){const f=t.files[0];t.value='';toast('파일 글을 읽는 중…');try{const tx=await localText(f);S.mk.ideaName=f.name;S.mk.ideaText=String(tx).replace(/\[p\.\d+\]\n?/g,'').slice(0,20000);render();toast('내 생각에 붙였습니다')}catch(e){toast(e.message||'읽지 못했습니다')}return}});
+let dragN=0;
+document.addEventListener('dragenter',ev=>{if(S.auth!=='ok'||!ev.dataTransfer||![...ev.dataTransfer.types].includes('Files'))return;dragN++;document.body.classList.add('dragging')});
+document.addEventListener('dragleave',()=>{if(--dragN<=0){dragN=0;document.body.classList.remove('dragging')}});
+document.addEventListener('dragover',ev=>{if(S.auth==='ok'&&ev.dataTransfer&&[...ev.dataTransfer.types].includes('Files'))ev.preventDefault()});
+document.addEventListener('drop',ev=>{if(S.auth!=='ok'||!ev.dataTransfer||!ev.dataTransfer.files.length)return;ev.preventDefault();dragN=0;document.body.classList.remove('dragging');uploadFiles([...ev.dataTransfer.files])});
+window.addEventListener('beforeunload',e=>{if(S.idx.run||S.up||S.job&&!S.job.err){e.preventDefault();e.returnValue=''}});
+window.LX={S,IX,findRefs,parseRefInput,chunkText,toks,bm25,searchAll,parseName,docxOf,docMd,verifyDoc,typeOf,hwpText,hwpxText,pptxText,capText,tsText,cfb,markNoCite,pg};
+boot();
+})();
+</script>
+</body>
+</html>
