@@ -1,3 +1,4 @@
+/* AI포켓 v16 · 최소 AI 사용 / 최대 활용 */
 /* Dora에몽 · 연결 설정 — API 키/비밀번호/Google access token은 이 파일에 넣지 않습니다. */
 window.LX_CONFIG = {
   permissionMode: "least-privilege", // Drive 전체 읽기 + AI포켓이 만든/업로드한 파일만 쓰기
