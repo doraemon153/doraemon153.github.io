@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
-<script src="config.js?v=20261120-7"></script>
+<script src="config.js?v=20261120-12"></script>
 <style>
 :root{color-scheme:light dark;--bg:light-dark(#f6f5f1,#121417);--panel:light-dark(#ffffff,#1b1e23);--panel2:light-dark(#f0eee8,#23272e);--ink:light-dark(#1d1f23,#eceef2);--ink2:light-dark(#4a4e57,#c3c7cf);--mute:light-dark(#7a7f89,#8d929c);--line:light-dark(#e3e0d8,#2e333b);--brand:light-dark(#14213d,#9fb4e6);--gold:light-dark(#b8862b,#e0b45c);--good:light-dark(#17784b,#5fd39a);--warn:light-dark(#9a5b00,#f0b453);--bad:light-dark(#c0392b,#ff7a6b);--btn:light-dark(#14213d,#e9ecf2);--btn-ink:light-dark(#fff,#121417)}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word}
@@ -86,15 +86,16 @@ body.dragging::after{content:'여기에 놓으면 드라이브에 올리고 색�
 /* background AI jobs */
 .bg-jobs{margin:14px 0;display:grid;gap:8px}.bg-job{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:11px 12px}.bg-job-top{display:flex;align-items:center;gap:8px}.bg-job .bar{margin:8px 0 5px}.bg-job small{color:var(--ink2)}.bg-job.done{border-color:color-mix(in srgb,var(--good) 40%,var(--line))}.bg-job.fail{border-color:color-mix(in srgb,var(--bad) 42%,var(--line))}.summary-actions{display:flex;gap:8px;flex-wrap:wrap;padding:10px 0 12px;border-bottom:1px solid var(--line);margin-bottom:12px;position:sticky;top:0;background:var(--bg);z-index:3}.summary-actions .btn{min-width:110px}.queued-note{border:1px solid color-mix(in srgb,var(--brand) 45%,var(--line));background:color-mix(in srgb,var(--brand) 8%,var(--panel));border-radius:13px;padding:12px;margin:10px 0}.summary-cover.fallback{background:linear-gradient(150deg,color-mix(in srgb,var(--brand) 32%,var(--panel2)),color-mix(in srgb,var(--warn) 14%,var(--panel2)));position:relative;overflow:hidden}.summary-cover.fallback:before{content:'📘';position:absolute;right:10px;top:8px;font-size:28px;opacity:.8}.sumcover-mini.fallback{background:linear-gradient(150deg,color-mix(in srgb,var(--brand) 32%,var(--panel2)),color-mix(in srgb,var(--warn) 14%,var(--panel2)))}
 </style>
-
+<style>
 /* iPad 연구 작업 최적화 */
 .archive-tools{display:flex;gap:7px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}.archive-tools::-webkit-scrollbar{display:none}.archive-tools .btn{flex:none}
 .archive-card{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px;margin:10px 0}.archive-card-head{display:flex;gap:12px;align-items:flex-start}.archive-type{font-size:12px;font-weight:700;color:var(--brand);margin-bottom:3px}.archive-card .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.archive-meta{font-size:12.5px;color:var(--mute)}
 @media (min-width:760px){.wrap{max-width:1180px}.sheet{max-width:980px}.make-grid{display:grid;grid-template-columns:minmax(270px,.8fr) minmax(0,1.2fr);gap:18px;align-items:start}.doc{font-size:16px;line-height:1.82;padding:28px 34px}.archive-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.archive-card{margin:0}.summary-head{grid-template-columns:150px 1fr}.summary-cover{width:150px;height:210px}.nav button{padding-top:12px}.btn{min-height:46px}.btn.sm{min-height:38px}.top{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}}
 @media (min-width:1024px){.archive-list{grid-template-columns:repeat(3,minmax(0,1fr))}.sheet{max-width:1120px}}
+</style>
 
 <style>#pocket-intro{position:fixed;inset:0;z-index:99999;display:flex;transition:opacity .32s ease,visibility .32s ease;flex-direction:column;align-items:center;justify-content:center;gap:clamp(12px,3vh,30px);padding:20px;text-align:center;background:linear-gradient(174deg,#fff 65%,#edfaff 88%,#d6f2ff);color:#123b77;font-family:system-ui,sans-serif;overflow:auto}
-#pocket-intro .word{width:min(88vw,760px);aspect-ratio:2172/724;position:relative;mix-blend-mode:multiply}
+#pocket-intro .word{width:min(88vw,760px);aspect-ratio:2172/724;position:relative;left:-3.2%;mix-blend-mode:multiply;margin-inline:auto;flex:none}
 
 #pocket-intro p{margin:0}.pocket-tag{font-size:clamp(18px,3vw,27px);font-weight:700;animation:intro-show .6s 1.65s both}
 .pocket-verse{line-height:1.65;animation:intro-show .7s 2.15s both}.pocket-verse small{display:block}.pocket-blessing{animation:intro-show .65s 2.7s both}
