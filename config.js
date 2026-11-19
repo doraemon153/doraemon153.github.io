@@ -14,5 +14,5 @@ window.LX_CONFIG = {
   storeKey: "doraemon",
   appName: "Dora에몽",
   subName: "AI포켓",
-  tagline: "내 서재에서 필요한 것을 꺼내 쓰는 AI포켓"
+  tagline: "내 자료에서 꺼내쓰는 AI포켓"
 };
