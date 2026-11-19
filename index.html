@@ -22,6 +22,7 @@ h1{font-size:22px;margin:4px 0 6px;letter-spacing:-.3px}h2{font-size:18px;margin
 .sub{color:var(--mute);margin:0 0 14px;font-size:14px}.note{color:var(--mute);font-size:13px;margin:8px 0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:600;white-space:nowrap;text-decoration:none;color:var(--ink)}
+button,[data-a],.btn,.gcard,.notegroup{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .btn.pri{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}.btn.sm{min-height:34px;padding:0 12px;font-size:13.5px;border-radius:8px}.btn:disabled{opacity:.5;cursor:default}
 .btn.big{width:100%;min-height:52px;font-size:16px}
 .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:var(--panel2);color:var(--ink2);font-weight:600}
@@ -102,7 +103,7 @@ body.dragging::after{content:'여기에 놓으면 드라이브에 올리고 색�
   100%{transform:rotate(360deg)}
 }
 /* A 안의 그림은 처음부터 그대로 표시하고 별도 등장 효과는 사용하지 않음 */
-.picture{animation:none!important;opacity:1!important;transform:none!important}
+.picture{animation:none!important;opacity:1!important;transform:none!important;transition:none!important}.picture *{animation:none!important;transition:none!important}
 @keyframes swim{from{transform:translate(-26px,88px) rotate(-18deg)}to{transform:none}}
 </style>
 <style>
@@ -311,7 +312,7 @@ function capText(raw,ext){const s=String(raw).replace(/\r/g,'').replace(/^﻿/,'
 function tsText(txt,base=0){const out=[];String(txt).split('\n').forEach(l=>{const m=l.match(/^\s*\[?((?:\d+:)?\d{1,2}:\d{2})\]?\s*[-–:]?\s*(.+)$/);if(m)out.push([tsec(m[1]),m[2].trim()]);else if(l.trim()&&out.length)out[out.length-1][1]+=' '+l.trim()});
   if(base&&out.length&&Math.max(...out.map(x=>x[0]))<base)out.forEach(x=>x[0]+=base);return out}
 /* 영상 · 음성 · 사진 설명: 미디어 중계 (선택, media-relay.gs) */
-async function media(action,body){if(!C.mediaUrl)throw {code:'nomedia'};const r=await fetch(C.mediaUrl,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GT.tok,action,...body})});const j=await r.json().catch(()=>({error:'server'}));if(j.error)throw {code:'media',message:'미디어 중계: '+j.error};return j}
+async function media(action,body){if(!C.mediaUrl)throw {code:'nomedia'};const r=await fetch(C.mediaUrl,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GT.tok,action,...body})});const j=await r.json().catch(()=>({error:'server',message:'응답을 읽지 못했습니다'}));if(j.error)throw {code:'media',message:'미디어 중계: '+(j.message||j.why||j.error)};return j}
 async function transcribe(f,ty,onp){const meta=await (await gf(`${DAPI}/${encodeURIComponent(f.id)}?fields=size,mimeType,videoMediaMetadata`)).json();const size=+meta.size||+f.size||0;
   if(size>1900*1048576)throw new Error('2GB가 넘어 받아쓰지 못합니다');const mime=meta.mimeType||f.mimeType||(ty==='video'?'video/mp4':'audio/mpeg');
   const st=await media('start',{name:f.name,mime,size});let off=0,file=null,g=0;
@@ -584,15 +585,15 @@ const DEFAULT_GUIDES=[
  {id:'digital',name:'디지털 신학 정리',input:'topic',desc:'주제 + 내 생각 → 개념 · 학자별 입장 · 논쟁 · 성경 근거 · 목회 적용',length:'A4 8쪽',tone:'학술 문체. 논문 준비에 바로 쓸 수 있게.',
   outline:[{h:'한눈에 보기',ask:'이 주제에 대해 서재가 말하는 핵심 다섯 줄'},{h:'개념 정의',ask:'주요 용어를 학자마다 어떻게 정의하는가'},{h:'학자별 입장',ask:'저자 · 책 · 핵심 주장 · 근거 쪽을 표로'},{h:'논쟁점',ask:'찬성과 비판이 갈리는 지점'},{h:'성경적 · 신학적 근거',ask:'자료에서 쓰인 성경 구절과 신학 전통'},{h:'목회와 교회 적용',ask:'예배 · 양육 · 공동체 · 윤리에 주는 의미'},{h:'내 생각과의 대화',ask:'내 주장을 뒷받침하거나 반박하는 근거'},{h:'빈 곳',ask:'서재에 자료가 부족한 하위 주제와 더 찾아볼 자료 종류'}],
   must:['반대 입장을 하나 이상 넣는다'],avoid:['서재에 없는 일반론'],prefer:[]}];
-const guideOf=id=>S.guides.find(g=>g.id===id)||S.guides[0];
+const guideOf=id=>S.guides.find(g=>g.id===id)||S.guides[0]||DEFAULT_GUIDES[0];
 
 /* ================= AI (Apps Script 중계) ================= */
 async function ai(messages,{tier='default',max=4000,system}={}){if(!C.relayUrl)throw {code:'noai'};if(!GT.tok||GT.exp<Date.now()+20000){gExpired();throw {code:'auth'}}
   const r=await fetch(C.relayUrl,{method:'POST',headers:{'content-type':'text/plain;charset=utf-8'},body:JSON.stringify({token:GT.tok,body:{messages:typeof messages==='string'?[{role:'user',content:messages}]:messages,tier,max_tokens:max,...(system?{system}:{})}})});
-  const j=await r.json().catch(()=>({error:'server'}));if(j.error){if(j.error==='daily_limit')toast(`오늘 AI 사용 한도(${j.limit}회)를 다 썼습니다`);throw {code:j.error,why:j.why}}
+  const j=await r.json().catch(()=>({error:'server',message:'AI 중계 응답을 읽지 못했습니다'}));if(j.error){if(j.error==='daily_limit')toast(`오늘 AI 사용 한도(${j.limit}회)를 다 썼습니다`);throw {code:j.error,why:j.why||j.message,message:j.message}}
   return (j.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('')}
 async function aiJSON(p,o){const t=await ai(p+'\n\nJSON만 출력한다. 설명 없이.',o);const a=t.indexOf('{'),b=t.indexOf('[');const s=(b>=0&&(a<0||b<a))?b:a;const e=Math.max(t.lastIndexOf('}'),t.lastIndexOf(']'));if(s<0||e<0)throw {code:'json'};return JSON.parse(t.slice(s,e+1))}
-const aiErr=e=>e&&e.code==='login'?'AI 중계가 로그인을 확인하지 못했습니다 (Apps Script의 CLIENT_ID 확인)':e&&e.code==='daily_limit'?'오늘 AI 사용 한도를 다 썼습니다':e&&e.code==='noai'?'config.js에 relayUrl이 없습니다':e&&e.code==='ai_upstream'?'AI 서비스가 응답하지 않았습니다. 잠시 뒤 다시 해 주세요':'AI 연결 오류 ('+(e&&(e.code||e.message)||e)+')';
+const aiErr=e=>e&&e.code==='login'?'AI 중계가 로그인을 확인하지 못했습니다. 다시 로그인해 주세요':e&&e.code==='daily_limit'?'오늘 AI 사용 한도를 다 썼습니다':e&&e.code==='noai'?'config.js에 relayUrl이 없습니다':e&&e.code==='ai_upstream'?'AI 서비스 오류: '+(e.why||e.message||'응답하지 않았습니다'):e&&e.code==='server'?'AI 중계 오류: '+(e.why||e.message||'Apps Script 배포와 Script Properties를 확인해 주세요'):e&&e.why?'AI 연결 오류: '+e.why:'AI 연결 오류 ('+(e&&(e.code||e.message)||e)+')';
 
 /* ================= 자료 만들기 ================= */
 const STEPS=['계획','찾기','고르기','쓰기','확인'];
@@ -968,7 +969,7 @@ const NOTE_VIEWS=[['recent','최근'],['topic','주제'],['cat','분류'],['book
 function noteSource(c){return S.lib.find(e=>e.id===c.fileId)||{}}
 function noteKeys(c,by){const e=noteSource(c);if(by==='topic'){const a=[...(c.topics||e.topics||[])];if(!a.length&&c.q)a.push(c.q);return [...new Set(a.filter(Boolean))]}if(by==='cat')return [c.cat||e.cat||'분류 전'];if(by==='book')return [c.title||e.title||'제목 없음'];if(by==='author')return [c.author||e.author||'저자 미상'];if(by==='bible')return [...new Set((c.bible||e.bk||[]).filter(Boolean))];if(by==='date')return [(c.day||c.at||'').slice(0,10)||'날짜 없음'];return []}
 function noteGroups(by,clips){const m=new Map();for(const c of clips)for(const k of noteKeys(c,by)){let a=m.get(k);if(!a)m.set(k,a=[]);a.push(c)}let a=[...m].map(([k,L])=>({k,L}));if(by==='date')a.sort((x,y)=>y.k.localeCompare(x.k));else a.sort((x,y)=>y.L.length-x.L.length||x.k.localeCompare(y.k,'ko'));return a}
-function noteCard(c){const e=noteSource(c),topics=[...(c.topics||e.topics||[])].slice(0,3),bible=[...(c.bible||e.bk||[])].slice(0,2);return `<div class="it clip"><div class="grow"><div class="t">${esc(c.author?c.author+', 『'+c.title+'』':'『'+c.title+'』')} ${esc(pg(c)||'')}</div><div class="m">${esc(c.kind||kindOf(e)||'')} ${c.cat?'· '+esc(c.cat):''} · ${esc((c.at||'').slice(0,10))}${c.q?' · 검색: '+esc(c.q):''}</div><div class="x">${esc((c.text||'').slice(0,420))}${(c.text||'').length>420?'…':''}</div>${topics.map(t=>`<span class="notetag">#${esc(t)}</span>`).join('')}${bible.map(t=>`<span class="notetag">📖 ${esc(t)}</span>`).join('')}${c.memo?`<div class="memo">${esc(c.memo)}</div>`:''}<div class="note-source">${esc(c.path||e.path||'내 드라이브')}</div></div><div class="itr"><button class="btn sm" data-a="clipcopy:${esc(c.id)}">복사</button>${canPage(c)?`<button class="btn sm" style="margin-top:6px" data-a="clippv:${esc(c.id)}">원문</button>`:''}<button class="btn sm" style="margin-top:6px" data-a="clipedit:${esc(c.id)}">메모</button><button class="btn sm danger" style="margin-top:6px" data-a="clipdel:${esc(c.id)}">삭제</button></div></div>`}
+function noteCard(c){const e=noteSource(c),topics=[...(c.topics||e.topics||[])].slice(0,3),bible=[...(c.bible||e.bk||[])].slice(0,2);return `<div class="it clip"><div class="grow"><div class="t">${esc(c.author?c.author+', 『'+c.title+'』':'『'+c.title+'』')} ${esc(pg(c)||'')}</div><div class="m">${esc(c.kind||kindOf(e)||'')} ${c.cat?'· '+esc(c.cat):''} · ${esc((c.at||'').slice(0,10))}${c.q?' · 검색: '+esc(c.q):''}</div><div class="x">${esc((c.text||'').slice(0,420))}${(c.text||'').length>420?'…':''}</div>${topics.map(t=>`<span class="notetag">#${esc(t)}</span>`).join('')}${bible.map(t=>`<span class="notetag">📖 ${esc(t)}</span>`).join('')}${c.memo?`<div class="memo">${esc(c.memo)}</div>`:''}<div class="note-source">${esc(c.path||e.path||'내 드라이브')}</div></div><div class="itr"><button class="btn sm" data-a="clipcopy:${esc(c.id)}">복사</button>${canPage(c)?`<button class="btn sm" style="margin-top:6px" data-a="clippv:${esc(c.id)}">원문</button>`:''}<button class="btn sm" style="margin-top:6px" data-a="clipedit:${esc(c.id)}">수정</button><button class="btn sm danger" style="margin-top:6px" data-a="clipdel:${esc(c.id)}">삭제</button></div></div>`}
 const SUM_VIEWS=[['recent','최근'],['topic','주제'],['cat','분류'],['author','저자'],['date','날짜']];
 function sumKeys(m,by){if(by==='topic')return (m.topics||[]).length?m.topics:['주제 미정'];if(by==='cat')return [m.cat||'분류 전'];if(by==='author')return [m.author||'저자 미상'];if(by==='date')return [(m.at||'').slice(0,10)||'날짜 없음'];return []}
 function sumGroups(by,L){const mp=new Map();for(const m of L)for(const k of sumKeys(m,by)){let a=mp.get(k);if(!a)mp.set(k,a=[]);a.push(m)}let a=[...mp].map(([k,L])=>({k,L}));if(by==='date')a.sort((x,y)=>y.k.localeCompare(x.k));else a.sort((x,y)=>y.L.length-x.L.length||x.k.localeCompare(y.k,'ko'));return a}
@@ -994,7 +995,7 @@ function guideModal(g){const isNew=!g;g=g||{id:'g'+Date.now(),name:'',input:'top
 /* --- 설정 --- */
 
 /* ================= 동작 ================= */
-document.addEventListener('click',async ev=>{if(ev.target.closest('a[href]'))return;const b=ev.target.closest('[data-a]');if(!b)return;const raw=b.dataset.a;const i=raw.indexOf(':');const a=i<0?raw:raw.slice(0,i),arg=i<0?'':raw.slice(i+1);
+document.addEventListener('click',async ev=>{try{if(ev.target.closest('a[href]'))return;const b=ev.target.closest('[data-a]');if(!b)return;const raw=b.dataset.a;const i=raw.indexOf(':');const a=i<0?raw:raw.slice(0,i),arg=i<0?'':raw.slice(i+1);
   if(a==='ovclose'){if(ev.target===b)closeModal();return}
   if(a==='close'){closeModal();return}
   if(a==='login'){gSignIn();return}
@@ -1040,7 +1041,7 @@ document.addEventListener('click',async ev=>{if(ev.target.closest('a[href]'))ret
   if(a==='sumgroup'){S.sumKey=decodeURIComponent(arg);render();scrollHome();return}
   if(a==='sumback'){S.sumKey='';render();scrollHome();return}
   if(a==='mkfrom'){closeModal();S.mk.scope='file:'+arg;S.tab='make';render();scrollHome();toast('이 자료 안에서만 근거를 찾습니다');return}
-  if(a==='shelfmake'){S.mk.scope=S.lv.by+':'+S.lv.key;const g=S.guides.find(x=>x.input==='topic');if(g&&guideOf(S.mk.guide).input!=='topic')S.mk.guide=g.id;if(!S.mk.topic&&S.lv.by==='topic')S.mk.topic=S.lv.key;S.tab='make';render();scrollHome();return}
+  if(a==='shelfmake'){const by=S.lv.by||'cat',key=S.lv.key;if(key==null){toast('먼저 책장을 선택해 주세요');return}S.mk.scope=by+':'+key;const g=S.guides.find(x=>x.input==='topic')||DEFAULT_GUIDES.find(x=>x.input==='topic');const cur=guideOf(S.mk.guide);if(g&&(!cur||cur.input!=='topic'))S.mk.guide=g.id;if(!S.mk.topic&&by==='topic')S.mk.topic=key;S.tab='make';render();scrollHome();return}
   if(a==='ftsearch'){S.tab='search';doSearch(S.libq);return}
   if(a==='qkind'){S.qkind=arg;render();return}
   if(a==='noteview'){S.noteBy=arg;S.noteKey='';render();return}
@@ -1054,7 +1055,7 @@ document.addEventListener('click',async ev=>{if(ev.target.closest('a[href]'))ret
   if(a==='clipcopy'){const c=S.clips.find(x=>x.id===arg);if(c){try{await navigator.clipboard.writeText(c.text||'');toast('노트를 복사했습니다')}catch(e){toast('복사하지 못했습니다')}}return}
   if(a==='clippv'){const c=S.clips.find(x=>x.id===arg);if(c)pvOpen(c);return}
   if(a==='clipdel'){if(!confirm('이 노트를 지울까요?'))return;S.clips=S.clips.filter(x=>x.id!==arg);await saveClips();render();return}
-  if(a==='clipedit'){const c=S.clips.find(x=>x.id===arg);if(c)modal(`<div class="row"><h2 class="grow" style="margin:0">노트 메모</h2><button class="btn sm" data-a="close">닫기</button></div><form id="f-clip" data-id="${esc(c.id)}"><p class="note">${esc(c.title)} ${esc(pg(c)||'')}</p><textarea id="clip-memo" rows="5" placeholder="설교, 강의, 논문에 어떻게 활용할지 메모">${esc(c.memo||'')}</textarea><button class="btn pri big" style="margin-top:8px">저장</button></form>`);return}
+  if(a==='clipedit'){const c=S.clips.find(x=>x.id===arg);if(c)modal(`<div class="row"><h2 class="grow" style="margin:0">노트 수정</h2><button class="btn sm" data-a="close">닫기</button></div><form id="f-clip" data-id="${esc(c.id)}"><p class="note">${esc(c.title)} ${esc(pg(c)||'')} · 원문 위치 정보는 그대로 유지됩니다.</p><div class="field"><label for="clip-text">저장한 내용</label><textarea id="clip-text" rows="10" placeholder="OCR 오타나 문장을 바로잡아 주세요">${esc(c.text||'')}</textarea></div><div class="field"><label for="clip-memo">활용 메모</label><textarea id="clip-memo" rows="4" placeholder="설교, 강의, 논문에 어떻게 활용할지 메모">${esc(c.memo||'')}</textarea></div><button class="btn pri big" style="margin-top:8px">저장</button></form>`);return}
   if(a==='ecard'){const e=S.lib.find(x=>x.id===arg);if(e)cardModal(e);return}
   if(a==='pv'){const x=S.doc&&S.doc.sources.find(s=>s.s===+arg);if(x)pvOpen(x);return}
   if(a==='pvx'){const d=+arg,x=IX.docs[d],e=x&&IX.books[x.b];if(e)pvOpen({d,fileId:e.id,ty:typeOf({mimeType:e.mime,name:e.name}),title:e.title,author:e.author,kind:kindOf(e),cat:e.cat,topics:e.topics||[],bible:e.bk||[],path:e.path||'',name:e.name||e.title,meta:e,p0:x.p0,p1:x.p1,u:x.u,text:x.text});return}
@@ -1079,8 +1080,9 @@ document.addEventListener('click',async ev=>{if(ev.target.closest('a[href]'))ret
   if(a==='gcopy'){const g=S.guides.find(x=>x.id===arg);if(g){const c=JSON.parse(JSON.stringify(g));c.id='g'+Date.now();c.name=g.name+' (복사)';S.guides.push(c);await saveGuides();render();guideModal(c)}return}
   if(a==='gdel'){if(S.guides.length<=1){toast('지침은 하나 이상 있어야 합니다');return}if(!confirm('이 지침을 지울까요?'))return;S.guides=S.guides.filter(g=>g.id!==arg);if(S.mk.guide===arg)S.mk.guide=S.guides[0].id;await saveGuides();closeModal();render();return}
   if(a==='gai'){modal(`<div class="row"><h2 class="grow" style="margin:0">AI로 지침 만들기</h2><button class="btn sm" data-a="close">닫기</button></div><p class="note">어떤 자료를 어떤 모양으로 받고 싶은지 말하듯 적으세요.</p><form id="f-gai"><textarea id="gai-t" rows="6" placeholder="예: 청년부 성경공부 교안. 본문 하나로 도입 질문, 본문 관찰, 해석, 나눔 질문 5개, 적용. A4 3쪽, 쉬운 말."></textarea><button class="btn pri big" style="margin-top:10px">지침 만들기</button></form>`);return}
-  if(a==='aitest'){const el=$('#aires');el.textContent='확인 중…';try{const t=await ai('"연결됨"이라고만 답해.',{tier:'fast',max:20});el.textContent='✓ '+t.trim().slice(0,30)}catch(e){el.textContent=aiErr(e)}return}
+  if(a==='aitest'){const el=$('#aires');el.textContent='확인 중…';try{const t=await ai('"연결됨"이라고만 답해.',{tier:'fast',max:20});el.textContent='✓ '+(t.trim().slice(0,30)||'연결됨')}catch(e){console.error('AI connection test',e);el.textContent=aiErr(e)}return}
   if(a==='cache'){await idbClear();ixDirty();toast('기기 사본을 지웠습니다. 다음 검색 때 드라이브에서 다시 받습니다');return}
+}catch(e){console.error('button action failed',e);toast('버튼 처리 오류: '+String(e&&e.message||e&&e.code||e).slice(0,90))}
 });
 document.addEventListener('submit',async ev=>{const f=ev.target;ev.preventDefault();
   if(f.id==='f-readpage'){if(READER&&READER.doc){const n=Math.min(READER.doc.numPages,Math.max(1,+$('#readpage').value||1));READER.page=n;await readerDraw()}return}
@@ -1090,7 +1092,7 @@ document.addEventListener('submit',async ev=>{const f=ev.target;ev.preventDefaul
     if(cat!==(e.cat||'')){e.cat=cat;e.tidied=null}saveLib(true);ixDirty();closeModal();render();toast('저장했습니다');tidyAll();return}
   if(f.id==='f-fq'){folderPicker($('#fq').value.trim());return}
   if(f.id==='f-rw'){const n=+f.dataset.n,h=$('#rwhow').value.trim();closeModal();rewriteSec(n,h);return}
-  if(f.id==='f-clip'){const c=S.clips.find(x=>x.id===f.dataset.id);if(c){c.memo=$('#clip-memo').value.trim();await saveClips();closeModal();render();toast('노트 메모를 저장했습니다')}return}
+  if(f.id==='f-clip'){const c=S.clips.find(x=>x.id===f.dataset.id);if(c){const tx=$('#clip-text').value.trim();if(!tx){toast('노트 내용은 비워 둘 수 없습니다');return}c.text=tx;c.memo=$('#clip-memo').value.trim();c.editedAt=new Date().toISOString();await saveClips();closeModal();render();toast('노트를 수정했습니다')}return}
   if(f.id==='f-guide'){const id=f.dataset.id;const lines=s=>$(s).value.split('\n').map(x=>x.trim()).filter(Boolean);
     const outline=lines('#g-out').map(l=>{const [h,...r]=l.split('|');return {h:h.trim(),ask:r.join('|').trim()}}).filter(o=>o.h);if(!outline.length){toast('목차를 한 줄 이상 적어 주세요');return}
     const g={id,name:$('#g-name').value.trim()||'새 지침',input:$('#g-input').value,length:$('#g-len').value.trim(),desc:$('#g-desc').value.trim(),tone:$('#g-tone').value.trim(),outline,must:lines('#g-must'),avoid:lines('#g-avoid'),preferCats:[...f.querySelectorAll('input[name=g-pc]:checked')].map(x=>x.value)};
@@ -1123,6 +1125,7 @@ document.addEventListener('dragleave',()=>{if(--dragN<=0){dragN=0;document.body.
 document.addEventListener('dragover',ev=>{if(S.auth==='ok'&&ev.dataTransfer&&[...ev.dataTransfer.types].includes('Files'))ev.preventDefault()});
 document.addEventListener('drop',ev=>{if(S.auth!=='ok'||!ev.dataTransfer||!ev.dataTransfer.files.length)return;ev.preventDefault();dragN=0;document.body.classList.remove('dragging');uploadFiles([...ev.dataTransfer.files])});
 window.addEventListener('beforeunload',e=>{if(S.idx.run||S.up||S.job&&!S.job.err){e.preventDefault();e.returnValue=''}});
+window.addEventListener('unhandledrejection',e=>{console.error('Unhandled promise',e.reason);const m=e&&e.reason&&(e.reason.message||e.reason.code);if(m)toast('처리 오류: '+String(m).slice(0,90))});
 window.LX={S,IX,findRefs,parseRefInput,chunkText,toks,bm25,searchAll,parseName,docxOf,docMd,verifyDoc,typeOf,hwpText,hwpxText,pptxText,capText,tsText,cfb,markNoCite,pg};
 const intro = document.getElementById('pocket-intro');
 const appRoot = document.getElementById('app');

@@ -1,103 +1,416 @@
 /**
- * 미디어 중계 (선택) — 영상 · 음성 받아쓰기, 글자가 없는 사진 읽기
- * 구글 Gemini API를 씁니다. 키는 이 스크립트 속성에만 둡니다(웹 화면 · 깃허브에는 없음).
+ * 도라에몽 AI 서재 · 통합 AI/미디어 중계 (Google Apps Script)
  *
- * 스크립트 속성 (프로젝트 설정 → 스크립트 속성)
- *   GEMINI_API_KEY  필수  https://aistudio.google.com 에서 만든 키
- *   OWNER_EMAIL     필수  config.js의 ownerEmail과 같은 주소
- *   GEMINI_MODEL    선택  기본 gemini-2.5-flash
+ * Script Properties
+ *   GEMINI_API_KEY : 필수
+ *   OWNER_EMAIL    : 필수
+ *   AI_MODEL       : 선택, 기본 gemini-3.5-flash
+ *   AI_FAST_MODEL  : 선택, 기본 gemini-3.1-flash-lite
+ *   MEDIA_MODEL    : 선택, 기본 gemini-3.5-flash
  *
- * 배포: 배포 → 새 배포 → 유형 "웹 앱" → 실행: 나 · 액세스: 모든 사용자 → 웹 앱 URL을 config.js의 mediaUrl에 넣기
- *
- * 흐름: 브라우저가 보낸 구글 로그인 토큰으로 ① 주인 계정인지 확인하고 ② 그 토큰으로 드라이브 영상을
- * 16MB씩 읽어 Gemini 파일 저장소로 옮긴 뒤 ③ 시각이 붙은 받아쓰기를 돌려주고 ④ 다 쓰면 지웁니다.
+ * 배포: 웹 앱 / 실행 사용자 나 / 액세스 권한 모든 사용자
+ * 실제 호출 권한은 앱이 보내는 Google OAuth access token의 이메일을
+ * OWNER_EMAIL과 비교해 한 번 더 제한합니다.
  */
-var P = PropertiesService.getScriptProperties();
-var GB = 'https://generativelanguage.googleapis.com';
-var CHUNK = 16 * 1024 * 1024; // 8MB의 배수
 
-function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
-function doGet() { return out({ ok: true, service: 'media-relay' }); }
-function hdr(h, name) { name = name.toLowerCase(); for (var k in h) if (k.toLowerCase() === name) return h[k]; return ''; }
-function mmss(s) { s = Math.max(0, Math.round(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + x).slice(-2); }
-function gen(model, key, body) {
-  var r = UrlFetchApp.fetch(GB + '/v1beta/models/' + model + ':generateContent?key=' + key, { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), muteHttpExceptions: true });
-  var t = r.getContentText(), j = {}; try { j = JSON.parse(t); } catch (e) {}
-  return { code: r.getResponseCode(), text: t, json: j };
-}
-function textOf(j) { var c = (j.candidates || [])[0]; var ps = c && c.content && c.content.parts || []; return ps.map(function (p) { return p.text || ''; }).join(''); }
-function ask(model, key, parts, max) {
-  var body = { contents: [{ role: 'user', parts: parts }], generationConfig: { temperature: 0, maxOutputTokens: max || 32000, mediaResolution: 'MEDIA_RESOLUTION_LOW', thinkingConfig: { thinkingBudget: 0 } } };
-  var r = gen(model, key, body);
-  if (r.code === 400) { delete body.generationConfig.thinkingConfig; delete body.generationConfig.mediaResolution; r = gen(model, key, body); }
-  if (r.code >= 300) throw new Error('AI 응답 ' + r.code + ' ' + r.text.slice(0, 200));
-  return textOf(r.json);
-}
-function driveBytes(token, id, from, to) {
-  var o = { headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true };
-  if (from != null) o.headers.Range = 'bytes=' + from + '-' + to;
-  var d = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media&supportsAllDrives=true', o);
-  if (d.getResponseCode() >= 300) throw new Error('드라이브 읽기 실패 ' + d.getResponseCode());
-  return d.getContent();
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com';
+const CHUNK_BYTES = 8 * 1024 * 1024;
+
+function doGet() {
+  try {
+    const p = PropertiesService.getScriptProperties();
+    const configured = !!String(p.getProperty('GEMINI_API_KEY') || '').trim() &&
+                       !!String(p.getProperty('OWNER_EMAIL') || '').trim();
+    return json_({
+      ok: true,
+      service: 'doraemon-unified-relay',
+      configured: configured,
+      aiModel: String(p.getProperty('AI_MODEL') || 'gemini-3.5-flash'),
+      fastModel: String(p.getProperty('AI_FAST_MODEL') || 'gemini-3.1-flash-lite'),
+      mediaModel: String(p.getProperty('MEDIA_MODEL') || 'gemini-3.5-flash')
+    });
+  } catch (e) {
+    return json_({ ok: false, error: 'server', message: String(e && e.message || e) });
+  }
 }
 
 function doPost(e) {
   try {
-    var b = JSON.parse(e.postData.contents || '{}');
-    var key = P.getProperty('GEMINI_API_KEY'), owner = String(P.getProperty('OWNER_EMAIL') || '').toLowerCase();
-    if (!key || !owner) return out({ error: '스크립트 속성 GEMINI_API_KEY · OWNER_EMAIL을 넣어 주세요' });
-    var ti = UrlFetchApp.fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + encodeURIComponent(b.token || ''), { muteHttpExceptions: true });
-    if (ti.getResponseCode() !== 200) return out({ error: '로그인 확인 실패' });
-    if (String(JSON.parse(ti.getContentText()).email || '').toLowerCase() !== owner) return out({ error: '허용되지 않은 계정' });
-    var model = P.getProperty('GEMINI_MODEL') || 'gemini-2.5-flash';
+    const req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const token = String(req.token || '');
+    if (!token) return json_({ error: 'missing_token', message: 'Google 로그인 토큰이 없습니다.' });
 
-    if (b.action === 'ping') return out({ ok: true, model: model });
+    const me = verifyUser_(token);
+    if (!me.ok) return json_({ error: me.error || 'unauthorized', message: me.message || '사용자 확인에 실패했습니다.' });
 
-    if (b.action === 'start') {
-      var r = UrlFetchApp.fetch(GB + '/upload/v1beta/files?key=' + key, { method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-        headers: { 'X-Goog-Upload-Protocol': 'resumable', 'X-Goog-Upload-Command': 'start', 'X-Goog-Upload-Header-Content-Length': String(b.size), 'X-Goog-Upload-Header-Content-Type': b.mime },
-        payload: JSON.stringify({ file: { display_name: String(b.name || 'media').slice(0, 120) } }) });
-      var url = hdr(r.getAllHeaders(), 'x-goog-upload-url');
-      if (!url) return out({ error: '업로드 시작 실패 ' + r.getResponseCode() + ' ' + r.getContentText().slice(0, 200) });
-      return out({ upload: url });
+    // 일반 AI 요청: index.html의 ai()가 보내는 형식
+    if (req.body && typeof req.body === 'object' && !req.action) {
+      return json_(textRelay_(req.body));
     }
 
-    if (b.action === 'push') {
-      var size = +b.size, off = +b.offset, end = Math.min(size, off + CHUNK) - 1;
-      var bytes = driveBytes(b.token, b.fileId, off, end), last = off + bytes.length >= size;
-      var u = UrlFetchApp.fetch(b.upload, { method: 'post', contentType: 'application/octet-stream', payload: bytes, muteHttpExceptions: true,
-        headers: { 'X-Goog-Upload-Offset': String(off), 'X-Goog-Upload-Command': last ? 'upload, finalize' : 'upload' } });
-      if (u.getResponseCode() >= 300) return out({ error: '업로드 실패 ' + u.getResponseCode() + ' ' + u.getContentText().slice(0, 200) });
-      var res = { offset: off + bytes.length };
-      if (last) { var f = JSON.parse(u.getContentText()).file; res.file = { name: f.name, uri: f.uri, state: f.state }; }
-      return out(res);
+    // 미디어 요청
+    switch (String(req.action || '')) {
+      case 'ping':       return json_(ping_());
+      case 'start':      return json_(startUpload_(req));
+      case 'push':       return json_(pushUpload_(req, token));
+      case 'wait':       return json_(getGeminiFile_(req.name));
+      case 'drop':       return json_(dropGeminiFile_(req.name));
+      case 'transcribe': return json_(transcribe_(req));
+      case 'describe':   return json_(describeImage_(req, token));
+      default:           return json_({ error: 'unknown_action', message: '지원하지 않는 중계 요청입니다.' });
     }
+  } catch (err) {
+    return json_({
+      error: 'server',
+      message: String(err && (err.message || err.stack) || err).slice(0, 1600)
+    });
+  }
+}
 
-    if (b.action === 'wait') {
-      var w = UrlFetchApp.fetch(GB + '/v1beta/' + b.name + '?key=' + key, { muteHttpExceptions: true });
-      var j = {}; try { j = JSON.parse(w.getContentText()); } catch (x) {}
-      return out({ state: j.state || 'PROCESSING' });
+function props_() {
+  const p = PropertiesService.getScriptProperties();
+  const key = String(p.getProperty('GEMINI_API_KEY') || '').trim();
+  const owner = String(p.getProperty('OWNER_EMAIL') || '').trim().toLowerCase();
+  if (!key) throw new Error('GEMINI_API_KEY가 Script Properties에 없습니다.');
+  if (!owner) throw new Error('OWNER_EMAIL이 Script Properties에 없습니다.');
+  return {
+    key: key,
+    owner: owner,
+    aiModel: String(p.getProperty('AI_MODEL') || 'gemini-3.5-flash').trim(),
+    fastModel: String(p.getProperty('AI_FAST_MODEL') || 'gemini-3.1-flash-lite').trim(),
+    mediaModel: String(p.getProperty('MEDIA_MODEL') || 'gemini-3.5-flash').trim()
+  };
+}
+
+function verifyUser_(accessToken) {
+  try {
+    const p = props_();
+    const r = UrlFetchApp.fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      method: 'get',
+      headers: { Authorization: 'Bearer ' + accessToken },
+      muteHttpExceptions: true
+    });
+    if (r.getResponseCode() !== 200) {
+      return { ok: false, error: 'login', message: 'Google 로그인 토큰을 확인하지 못했습니다.' };
     }
-
-    if (b.action === 'transcribe') {
-      var part = { fileData: { mimeType: b.mime, fileUri: b.uri } };
-      var seg = '';
-      if (b.start != null) { part.videoMetadata = { startOffset: b.start + 's', endOffset: b.end + 's' }; seg = '이 파일의 ' + mmss(b.start) + '부터 ' + mmss(b.end) + '까지 구간만 받아쓴다. 시각은 파일 맨 처음부터 잰 시각으로 적는다.\n'; }
-      var prompt = (b.kind === 'video' ? '영상' : '음성') + '의 말을 빠짐없이 받아쓴다. 한국어는 한국어로, 다른 말은 그 말 그대로.\n' + seg +
-        '- 한 줄에 한 덩어리로, 줄 맨 앞에 [분:초] 또는 [시:분:초] 시각을 붙인다.\n- 말이 없고 화면 글자(자막 · 슬라이드)만 있으면 "[시각] (화면) 글자"로 적는다.\n- 요약하거나 설명을 보태지 않는다. 받아쓴 글만 출력한다.';
-      return out({ text: ask(model, key, [part, { text: prompt }]) });
+    const j = JSON.parse(r.getContentText() || '{}');
+    if (String(j.email || '').toLowerCase() !== p.owner) {
+      return { ok: false, error: 'login', message: 'OWNER_EMAIL과 로그인 계정이 다릅니다.' };
     }
+    return { ok: true, email: j.email };
+  } catch (e) {
+    return { ok: false, error: 'login', message: String(e && e.message || e) };
+  }
+}
 
-    if (b.action === 'describe') {
-      var img = driveBytes(b.token, b.fileId);
-      if (img.length > 15 * 1024 * 1024) return out({ error: '사진이 너무 큽니다' });
-      var t = ask(model, key, [{ inlineData: { mimeType: b.mime || 'image/jpeg', data: Utilities.base64Encode(img) } },
-        { text: '이 사진 속 글자를 모두 그대로 옮겨 적고(없으면 생략), 이어서 사진에 무엇이 있는지 3~5문장으로 설명한다. 한국어로. 지어내지 않는다.' }], 4000);
-      return out({ text: t });
+/* ================= 일반 AI ================= */
+
+function textRelay_(body) {
+  const p = props_();
+  const tier = String(body.tier || 'default');
+  const model = tier === 'fast' ? p.fastModel : p.aiModel;
+  const max = Math.max(1, Math.min(32768, Number(body.max_tokens || 4000)));
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+  if (!messages.length) return { error: 'bad_request', message: 'AI 메시지가 없습니다.' };
+
+  const contents = [];
+  messages.forEach(function(m) {
+    if (!m) return;
+    const role0 = String(m.role || 'user').toLowerCase();
+    if (role0 === 'system') return;
+    const role = (role0 === 'assistant' || role0 === 'model') ? 'model' : 'user';
+    let txt = '';
+    if (typeof m.content === 'string') txt = m.content;
+    else if (Array.isArray(m.content)) {
+      txt = m.content.map(function(x) {
+        if (typeof x === 'string') return x;
+        return x && (x.text || x.content) ? String(x.text || x.content) : '';
+      }).filter(Boolean).join('\n');
+    } else if (m.content != null) txt = String(m.content);
+    if (txt) contents.push({ role: role, parts: [{ text: txt }] });
+  });
+  if (!contents.length) return { error: 'bad_request', message: '보낼 텍스트가 없습니다.' };
+
+  const payload = {
+    contents: contents,
+    generationConfig: { maxOutputTokens: max }
+  };
+  const system = String(body.system || '').trim();
+  if (system) payload.systemInstruction = { parts: [{ text: system }] };
+
+  try {
+    const out = generateContentWithFallback_(model, payload, '일반 AI', tier === 'fast' ? 'fast' : 'default');
+    const text = candidateText_(out.data);
+    if (!text) return { error: 'ai_upstream', why: 'Gemini가 빈 응답을 반환했습니다.' };
+    return { content: [{ type: 'text', text: text }], model: out.model };
+  } catch (e) {
+    return { error: 'ai_upstream', why: String(e && e.message || e).slice(0, 1200) };
+  }
+}
+
+function ping_() {
+  const p = props_();
+  const out = generateContentWithFallback_(p.fastModel, {
+    contents: [{ role: 'user', parts: [{ text: 'OK라고만 답해.' }] }],
+    generationConfig: { maxOutputTokens: 8 }
+  }, '연결 확인', 'fast');
+  return { ok: true, model: out.model, response: candidateText_(out.data).slice(0, 20) };
+}
+
+/* ================= Gemini Files API ================= */
+
+function startUpload_(req) {
+  const p = props_();
+  const size = Number(req.size || 0);
+  const mime = String(req.mime || 'application/octet-stream');
+  const name = String(req.name || 'media');
+  if (!(size > 0)) throw new Error('파일 크기가 없습니다.');
+  if (size > 2 * 1024 * 1024 * 1024) throw new Error('2GB를 넘는 파일은 처리하지 않습니다.');
+
+  const r = UrlFetchApp.fetch(GEMINI_BASE + '/upload/v1beta/files', {
+    method: 'post',
+    headers: {
+      'x-goog-api-key': p.key,
+      'X-Goog-Upload-Protocol': 'resumable',
+      'X-Goog-Upload-Command': 'start',
+      'X-Goog-Upload-Header-Content-Length': String(size),
+      'X-Goog-Upload-Header-Content-Type': mime
+    },
+    contentType: 'application/json',
+    payload: JSON.stringify({ file: { display_name: name } }),
+    muteHttpExceptions: true
+  });
+  ensure2xx_(r, 'Gemini 업로드 시작');
+  const upload = header_(r.getAllHeaders(), 'x-goog-upload-url');
+  if (!upload) throw new Error('Gemini 업로드 URL을 받지 못했습니다.');
+  return { upload: String(upload) };
+}
+
+function pushUpload_(req, accessToken) {
+  const upload = String(req.upload || '');
+  const fileId = String(req.fileId || '');
+  const size = Number(req.size || 0);
+  const offset = Number(req.offset || 0);
+  if (!upload || !fileId || !(size > 0)) throw new Error('업로드 정보가 부족합니다.');
+  if (offset >= size) return { offset: size };
+
+  const end = Math.min(size - 1, offset + CHUNK_BYTES - 1);
+  const dr = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media', {
+    method: 'get',
+    headers: { Authorization: 'Bearer ' + accessToken, Range: 'bytes=' + offset + '-' + end },
+    muteHttpExceptions: true
+  });
+  const dc = dr.getResponseCode();
+  if (dc !== 206 && dc !== 200) throw new Error('Drive 파일 조각을 읽지 못했습니다. HTTP ' + dc);
+
+  const isLast = end + 1 >= size;
+  const ur = UrlFetchApp.fetch(upload, {
+    method: 'post',
+    headers: {
+      'X-Goog-Upload-Offset': String(offset),
+      'X-Goog-Upload-Command': isLast ? 'upload, finalize' : 'upload'
+    },
+    payload: dr.getBlob(),
+    muteHttpExceptions: true
+  });
+  ensure2xx_(ur, 'Gemini 파일 전송');
+
+  const out = { offset: end + 1 };
+  if (isLast) {
+    const j = JSON.parse(ur.getContentText() || '{}');
+    if (!j.file) throw new Error('Gemini 파일 정보가 없습니다.');
+    out.file = j.file;
+  }
+  return out;
+}
+
+function getGeminiFile_(name) {
+  const p = props_();
+  name = normalizeFileName_(name);
+  const r = UrlFetchApp.fetch(GEMINI_BASE + '/v1beta/' + name, {
+    method: 'get',
+    headers: { 'x-goog-api-key': p.key },
+    muteHttpExceptions: true
+  });
+  ensure2xx_(r, 'Gemini 파일 상태 확인');
+  const j = JSON.parse(r.getContentText() || '{}');
+  return { name: j.name, uri: j.uri, mimeType: j.mimeType, state: j.state };
+}
+
+function dropGeminiFile_(name) {
+  if (!name) return { ok: true };
+  const p = props_();
+  name = normalizeFileName_(name);
+  const r = UrlFetchApp.fetch(GEMINI_BASE + '/v1beta/' + name, {
+    method: 'delete',
+    headers: { 'x-goog-api-key': p.key },
+    muteHttpExceptions: true
+  });
+  const c = r.getResponseCode();
+  if (c !== 200 && c !== 204 && c !== 404) ensure2xx_(r, 'Gemini 파일 삭제');
+  return { ok: true };
+}
+
+/* ================= 영상/음성/사진 ================= */
+
+function transcribe_(req) {
+  const p = props_();
+  const uri = String(req.uri || '');
+  const mime = String(req.mime || (req.kind === 'video' ? 'video/mp4' : 'audio/mpeg'));
+  const kind = String(req.kind || 'audio');
+  if (!uri) throw new Error('Gemini 파일 URI가 없습니다.');
+
+  const prompt = [
+    '이 미디어의 실제 발화를 가능한 한 정확히 전사한다.',
+    '말하지 않은 내용을 추측해서 추가하지 않는다.',
+    '각 줄은 반드시 [MM:SS] 발화 내용 형식으로 쓴다.',
+    '한국어 발화는 한국어 그대로 적고 다른 언어는 원문을 최대한 보존한다.',
+    '긴 침묵이나 음악만 있는 구간은 생략한다.',
+    '화자 이름을 확실히 알 수 없으면 이름을 지어내지 않는다.',
+    '설명이나 머리말 없이 전사 내용만 출력한다.'
+  ].join('\n');
+
+  const mediaPart = { fileData: { mimeType: mime, fileUri: uri } };
+  if (kind === 'video' && (req.start != null || req.end != null)) {
+    const vm = {};
+    if (req.start != null) vm.startOffset = Math.max(0, Number(req.start)) + 's';
+    if (req.end != null) vm.endOffset = Math.max(0, Number(req.end)) + 's';
+    mediaPart.videoMetadata = vm;
+  }
+
+  const out = generateContentWithFallback_(p.mediaModel, {
+    contents: [{ role: 'user', parts: [mediaPart, { text: prompt }] }],
+    generationConfig: { maxOutputTokens: 12000 }
+  }, '미디어 받아쓰기', 'media');
+  return { text: candidateText_(out.data), model: out.model };
+}
+
+function describeImage_(req, accessToken) {
+  const p = props_();
+  const fileId = String(req.fileId || '');
+  const mime = String(req.mime || 'image/jpeg');
+  if (!fileId) throw new Error('사진 파일 ID가 없습니다.');
+
+  const dr = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media', {
+    method: 'get',
+    headers: { Authorization: 'Bearer ' + accessToken },
+    muteHttpExceptions: true
+  });
+  if (dr.getResponseCode() !== 200) throw new Error('Drive 사진을 읽지 못했습니다. HTTP ' + dr.getResponseCode());
+  const bytes = dr.getBlob().getBytes();
+  if (bytes.length > 15 * 1024 * 1024) throw new Error('사진이 15MB를 넘어 설명하지 않습니다.');
+
+  const prompt = [
+    '이 이미지를 서재 검색용으로 정확하게 정리한다.',
+    '보이는 글자가 있으면 먼저 읽어 적고, 이어서 이미지의 핵심 내용을 간결하게 설명한다.',
+    '사람의 신원이나 민감한 특성을 추측하지 않는다.',
+    '보이지 않는 사실을 만들어내지 않는다.',
+    '검색에 도움이 되는 사물, 장소 유형, 문서 종류, 화면 요소를 포함한다.'
+  ].join('\n');
+
+  const out = generateContentWithFallback_(p.mediaModel, {
+    contents: [{ role: 'user', parts: [
+      { inlineData: { mimeType: mime, data: Utilities.base64Encode(bytes) } },
+      { text: prompt }
+    ] }],
+    generationConfig: { maxOutputTokens: 3000 }
+  }, '사진 설명', 'media');
+  return { text: candidateText_(out.data), model: out.model };
+}
+
+/* ================= Gemini 공통 ================= */
+
+function modelFallbacks_(primary, kind) {
+  const a = [String(primary || '').trim()];
+  if (kind === 'fast') {
+    a.push('gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash');
+  } else if (kind === 'media') {
+    a.push('gemini-3.5-flash', 'gemini-3.8-flash', 'gemini-3.1-flash-lite');
+  } else {
+    a.push('gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash');
+  }
+  return a.filter(function(x, i) { return x && a.indexOf(x) === i; });
+}
+
+function retryableGemini_(e) {
+  const s = Number(e && e.status || 0);
+  return [404, 408, 409, 429, 500, 502, 503, 504].indexOf(s) >= 0;
+}
+
+function generateContentWithFallback_(primary, payload, label, kind) {
+  const models = modelFallbacks_(primary, kind || 'default');
+  let last = null;
+  for (let i = 0; i < models.length; i++) {
+    try {
+      return { data: generateContent_(models[i], payload, label), model: models[i] };
+    } catch (e) {
+      last = e;
+      if (!retryableGemini_(e)) throw e;
+      if (i < models.length - 1) Utilities.sleep(350);
     }
+  }
+  throw last || new Error((label || 'Gemini') + ' 연결에 실패했습니다.');
+}
 
-    if (b.action === 'drop') { UrlFetchApp.fetch(GB + '/v1beta/' + b.name + '?key=' + key, { method: 'delete', muteHttpExceptions: true }); return out({ ok: true }); }
+function generateContent_(model, payload, label) {
+  const p = props_();
+  const r = UrlFetchApp.fetch(
+    GEMINI_BASE + '/v1beta/models/' + encodeURIComponent(model) + ':generateContent',
+    {
+      method: 'post',
+      headers: { 'x-goog-api-key': p.key },
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    }
+  );
+  ensure2xx_(r, label || 'Gemini');
+  return JSON.parse(r.getContentText() || '{}');
+}
 
-    return out({ error: '알 수 없는 요청' });
-  } catch (err) { return out({ error: String(err && err.message || err).slice(0, 300) }); }
+function candidateText_(j) {
+  const a = [];
+  const cs = j && Array.isArray(j.candidates) ? j.candidates : [];
+  cs.forEach(function(c) {
+    const ps = c && c.content && Array.isArray(c.content.parts) ? c.content.parts : [];
+    ps.forEach(function(x) { if (x && x.text) a.push(String(x.text)); });
+  });
+  return a.join('\n').trim();
+}
+
+function normalizeFileName_(name) {
+  name = String(name || '').replace(/^\/+/, '');
+  if (!/^files\//.test(name)) throw new Error('잘못된 Gemini 파일 이름입니다.');
+  return name;
+}
+
+function ensure2xx_(r, label) {
+  const c = r.getResponseCode();
+  if (c >= 200 && c < 300) return;
+  let t = String(r.getContentText() || '').slice(0, 1400);
+  try {
+    const j = JSON.parse(t);
+    if (j && j.error && j.error.message) t = j.error.message;
+  } catch (e) {}
+  const err = new Error((label || '요청') + ' 실패 · HTTP ' + c + (t ? ' · ' + t : ''));
+  err.status = c;
+  err.body = t;
+  throw err;
+}
+
+function header_(headers, wanted) {
+  wanted = String(wanted).toLowerCase();
+  const keys = Object.keys(headers || {});
+  for (let i = 0; i < keys.length; i++) {
+    if (String(keys[i]).toLowerCase() === wanted) {
+      const v = headers[keys[i]];
+      return Array.isArray(v) ? v[0] : v;
+    }
+  }
+  return '';
+}
+
+function json_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
