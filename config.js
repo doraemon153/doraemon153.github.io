@@ -10,6 +10,6 @@ window.LX_CONFIG = {
   rootName: "도라에몽 서재",     // 내 드라이브에 생기는 플랫폼 폴더
   storeKey: "doraemon",
   appName: "도라에몽",
-  subName: "AI 서재",
+  subName: "AI서재",
   tagline: "내 자료에서 필요한 것을 꺼내 주는 AI포켓"
 };
