@@ -12,6 +12,6 @@ window.LX_CONFIG = {
   rootName: "도라에몽 서재",
   storeKey: "doraemon",
   appName: "도라에몽",
-  subName: "연구 서재 AI",
-  tagline: "내 서재에서 필요한 것을 꺼내 주는 연구 AI"
+  subName: "AI포켓",
+  tagline: "내 서재에서 필요한 것을 꺼내 주는 AI포켓"
 };
