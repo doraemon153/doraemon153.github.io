@@ -95,10 +95,19 @@ body.dragging::after{content:'여기에 놓으면 드라이브에 올리고 색�
 .fish{animation:swim .85s ease-out both}
  .page{animation:follow-o 1.12s .85s linear both}
 @keyframes follow-o{0.000%{transform:translate(0.00px,0.00px)}2.083%{transform:translate(13.35px,8.31px)}4.167%{transform:translate(25.24px,17.98px)}6.250%{transform:translate(35.47px,28.82px)}8.333%{transform:translate(43.85px,40.66px)}10.417%{transform:translate(50.26px,53.29px)}12.500%{transform:translate(54.57px,66.49px)}14.583%{transform:translate(56.72px,80.05px)}16.667%{transform:translate(56.66px,93.73px)}18.750%{transform:translate(54.41px,107.29px)}20.833%{transform:translate(49.99px,120.51px)}22.917%{transform:translate(43.48px,133.15px)}25.000%{transform:translate(35.00px,145.00px)}27.083%{transform:translate(24.69px,155.86px)}29.167%{transform:translate(12.72px,165.54px)}31.250%{transform:translate(-0.70px,173.88px)}33.333%{transform:translate(-15.34px,180.73px)}35.417%{transform:translate(-30.94px,185.98px)}37.500%{transform:translate(-47.25px,189.53px)}39.583%{transform:translate(-63.98px,191.33px)}41.667%{transform:translate(-80.85px,191.34px)}43.750%{transform:translate(-97.57px,189.57px)}45.833%{transform:translate(-113.85px,186.05px)}47.917%{transform:translate(-129.42px,180.83px)}50.000%{transform:translate(-144.00px,174.00px)}52.083%{transform:translate(-157.35px,165.69px)}54.167%{transform:translate(-169.24px,156.02px)}56.250%{transform:translate(-179.47px,145.18px)}58.333%{transform:translate(-187.85px,133.34px)}60.417%{transform:translate(-194.26px,120.71px)}62.500%{transform:translate(-198.57px,107.51px)}64.583%{transform:translate(-200.72px,93.95px)}66.667%{transform:translate(-200.66px,80.27px)}68.750%{transform:translate(-198.41px,66.71px)}70.833%{transform:translate(-193.99px,53.49px)}72.917%{transform:translate(-187.48px,40.85px)}75.000%{transform:translate(-179.00px,29.00px)}77.083%{transform:translate(-168.69px,18.14px)}79.167%{transform:translate(-156.72px,8.46px)}81.250%{transform:translate(-143.30px,0.12px)}83.333%{transform:translate(-128.66px,-6.73px)}85.417%{transform:translate(-113.06px,-11.98px)}87.500%{transform:translate(-96.75px,-15.53px)}89.583%{transform:translate(-80.02px,-17.33px)}91.667%{transform:translate(-63.15px,-17.34px)}93.750%{transform:translate(-46.43px,-15.57px)}95.833%{transform:translate(-30.15px,-12.05px)}97.917%{transform:translate(-14.58px,-6.83px)}100.000%{transform:translate(-0.00px,-0.00px)}}
-.play{animation:travel-r .48s 1.99s ease-out both}
-@keyframes travel-r{from{transform:translateY(195px)}to{transform:translateY(0)}}
-.picture{animation:appear-a .01s 2.5s steps(1,end) both}
-@keyframes appear-a{from{opacity:0}to{opacity:1}}
+.play{animation:travel-r 1.05s 1.88s cubic-bezier(.22,.72,.24,1) both;transform-box:fill-box;transform-origin:center}
+/* 영상 아이콘: r 아래에서 시작 → r의 세로획을 따라 상승 → 윗굴곡을 따라 현재 자리로 안착 */
+@keyframes travel-r{
+  0%{transform:translate(-5px,205px) rotate(-7deg);opacity:0}
+  10%{opacity:1}
+  42%{transform:translate(-5px,105px) rotate(-3deg)}
+  66%{transform:translate(-2px,48px) rotate(0deg)}
+  80%{transform:translate(18px,26px) rotate(7deg)}
+  92%{transform:translate(8px,8px) rotate(2deg)}
+  100%{transform:translate(0,0) rotate(0deg);opacity:1}
+}
+/* A 안의 그림은 처음부터 그대로 표시하고 별도 등장 효과는 사용하지 않음 */
+.picture{animation:none!important;opacity:1!important;transform:none!important}
 @keyframes swim{from{transform:translate(-26px,88px) rotate(-18deg)}to{transform:none}}
 </style>
 <style>
