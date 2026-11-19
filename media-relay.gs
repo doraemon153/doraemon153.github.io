@@ -113,28 +113,30 @@ function textRelay_(body) {
   const messages = Array.isArray(body.messages) ? body.messages : [];
   if (!messages.length) return { error: 'bad_request', message: 'AI 메시지가 없습니다.' };
 
-  const contents = [];
-  messages.forEach(function(m) {
-    if (!m) return;
-    const role0 = String(m.role || 'user').toLowerCase();
-    if (role0 === 'system') return;
-    const role = (role0 === 'assistant' || role0 === 'model') ? 'model' : 'user';
-    let txt = '';
-    if (typeof m.content === 'string') txt = m.content;
-    else if (Array.isArray(m.content)) {
-      txt = m.content.map(function(x) {
-        if (typeof x === 'string') return x;
-        return x && (x.text || x.content) ? String(x.text || x.content) : '';
-      }).filter(Boolean).join('\n');
-    } else if (m.content != null) txt = String(m.content);
-    if (txt) contents.push({ role: role, parts: [{ text: txt }] });
-  });
+  // JSON 요청: 동기 generateContent의 공식 구조화 출력 설정을 사용한다.
+  // responseMimeType만으로도 JSON 출력을 강제하고, 실제 속성 정의가 있는 스키마만 responseJsonSchema로 전달한다.
+  if (body.json) {
+    const contents = messagesToContents_(messages);
+    if (!contents.length) return { error: 'bad_request', message: '보낼 텍스트가 없습니다.' };
+    const generationConfig = { maxOutputTokens: max, responseMimeType: 'application/json' };
+    if (usableSchema_(body.schema)) generationConfig.responseJsonSchema = body.schema;
+    const payload = { contents: contents, generationConfig: generationConfig };
+    const system = String(body.system || '').trim();
+    if (system) payload.systemInstruction = { parts: [{ text: system }] };
+    try {
+      const j = generateContent_(model, payload, 'JSON AI');
+      const text = candidateText_(j);
+      if (!text) return { error: 'ai_upstream', why: 'Gemini JSON 응답이 비어 있습니다.' };
+      return { content: [{ type: 'text', text: text }], model: model, structured: true };
+    } catch (e) {
+      return { error: 'ai_upstream', why: String(e && e.message || e).slice(0, 1400) };
+    }
+  }
+
+  const contents = messagesToContents_(messages);
   if (!contents.length) return { error: 'bad_request', message: '보낼 텍스트가 없습니다.' };
 
-  const payload = {
-    contents: contents,
-    generationConfig: { maxOutputTokens: max, ...(body.json ? { responseMimeType: 'application/json' } : {}) }
-  };
+  const payload = { contents: contents, generationConfig: { maxOutputTokens: max } };
   const system = String(body.system || '').trim();
   if (system) payload.systemInstruction = { parts: [{ text: system }] };
 
@@ -146,6 +148,93 @@ function textRelay_(body) {
   } catch (e) {
     return { error: 'ai_upstream', why: String(e && e.message || e).slice(0, 1200) };
   }
+}
+
+function messagesToContents_(messages) {
+  const contents = [];
+  (messages || []).forEach(function(m) {
+    if (!m) return;
+    const role0 = String(m.role || 'user').toLowerCase();
+    if (role0 === 'system') return;
+    const role = (role0 === 'assistant' || role0 === 'model') ? 'model' : 'user';
+    let txt = '';
+    if (typeof m.content === 'string') txt = m.content;
+    else if (Array.isArray(m.content)) txt = m.content.map(function(x) {
+      if (typeof x === 'string') return x;
+      return x && (x.text || x.content) ? String(x.text || x.content) : '';
+    }).filter(Boolean).join('\n');
+    else if (m.content != null) txt = String(m.content);
+    if (txt) contents.push({ role: role, parts: [{ text: txt }] });
+  });
+  return contents;
+}
+
+function usableSchema_(s) {
+  return !!(s && typeof s === 'object' && (s.properties || s.items || s.anyOf || s.oneOf || s.$defs));
+}
+
+function interactionPrompt_(messages, system) {
+  const a = [];
+  const sys = String(system || '').trim();
+  if (sys) a.push('[SYSTEM]\n' + sys);
+  (messages || []).forEach(function(m) {
+    if (!m) return;
+    let txt = '';
+    if (typeof m.content === 'string') txt = m.content;
+    else if (Array.isArray(m.content)) txt = m.content.map(function(x) {
+      if (typeof x === 'string') return x;
+      return x && (x.text || x.content) ? String(x.text || x.content) : '';
+    }).filter(Boolean).join('\n');
+    else if (m.content != null) txt = String(m.content);
+    if (!txt) return;
+    a.push('[' + String(m.role || 'user').toUpperCase() + ']\n' + txt);
+  });
+  return a.join('\n\n');
+}
+
+function interactionGenerate_(model, input, max, schema) {
+  const p = props_();
+  const payload = {
+    model: model,
+    input: input,
+    store: false,
+    stream: false,
+    generation_config: { max_output_tokens: max },
+    response_format: {
+      type: 'text',
+      mime_type: 'application/json',
+      schema: schema
+    }
+  };
+  const r = UrlFetchApp.fetch(GEMINI_BASE + '/v1beta/interactions', {
+    method: 'post',
+    headers: { 'x-goog-api-key': p.key },
+    contentType: 'application/json',
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  ensure2xx_(r, 'Gemini 구조화 출력');
+  const j = JSON.parse(r.getContentText() || '{}');
+  if (String(j.status || '').toLowerCase() === 'incomplete') {
+    throw new Error('Gemini JSON 응답이 출력 한도에서 잘렸습니다. 더 큰 출력 한도로 다시 시도합니다.');
+  }
+  return j;
+}
+
+function interactionText_(j) {
+  if (!j) return '';
+  if (typeof j.output_text === 'string' && j.output_text.trim()) return j.output_text.trim();
+  const a = [];
+  const scan = function(x) {
+    if (!x) return;
+    if (typeof x === 'string') return;
+    if (x.text && typeof x.text === 'string') a.push(x.text);
+    if (Array.isArray(x.content)) x.content.forEach(scan);
+  };
+  if (Array.isArray(j.outputs)) j.outputs.forEach(scan);
+  if (Array.isArray(j.output)) j.output.forEach(scan);
+  if (Array.isArray(j.steps)) j.steps.forEach(scan);
+  return a.join('\n').trim();
 }
 
 function ping_() {

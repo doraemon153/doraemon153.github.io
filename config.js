@@ -1,17 +1,17 @@
-/* 도라에몽 · 연결 설정 — 비밀번호나 AI 키는 넣지 않습니다. */
+/* Dora에몽 · 연결 설정 — API 키는 이 파일에 넣지 않습니다. */
 window.LX_CONFIG = {
   clientId: "383723869928-k5lsrn10up6rgne0j3pmmd3t6dov82ch.apps.googleusercontent.com",
   ownerEmail: "leehyesung516@gmail.com",
 
-  // 일반 AI + 미디어 AI 통합 중계
-  relayUrl: "https://script.google.com/macros/s/AKfycbzgomZ53DrojzwSgA-FxzImW2L8T4XhokG6gC0L1TPhkbP5ST_Px28P75cns71OX9NsXA/exec",
+  // 일반 텍스트 AI는 기존 중계를 우선 사용합니다. 실패하면 index.html이 mediaUrl로 자동 재시도합니다.
+  relayUrl: "https://script.google.com/macros/s/AKfycbylw2CDwknsHfS8z9MQAbH26Fm8xupTs-lPfQ0moHggaUR1ObBg9EKVjZa9wGaWHu57/exec",
 
-  // 영상 · 음성 · 사진은 새 미디어 중계
+  // 영상 · 음성 · 사진 + JSON 구조화 출력용 통합 중계
   mediaUrl: "https://script.google.com/macros/s/AKfycbzgomZ53DrojzwSgA-FxzImW2L8T4XhokG6gC0L1TPhkbP5ST_Px28P75cns71OX9NsXA/exec",
 
   rootName: "도라에몽 서재",
   storeKey: "doraemon",
-  appName: "도라에몽",
-  subName: "연구 서재 AI",
-  tagline: "내 서재에서 필요한 것을 꺼내 주는 연구 AI"
+  appName: "Dora에몽",
+  subName: "AI포켓",
+  tagline: "내 서재에서 필요한 것을 꺼내 쓰는 AI포켓"
 };
