@@ -627,7 +627,7 @@ function parseCardText(raw,items){const out=[];const re=/<<ITEM\s*:?\s*(\d+)>>([
 async function bookCards(list){const items=[];for(const e of list){const c=await chunksOf(e);const early=c.slice(0,10);const first=early.map(x=>`[${pg(x)||''}] ${x.text}`).join('\n').slice(0,6500);items.push({e,first,guess:guessDocType(e,first)})}
   const prompt=`아래 자료 ${items.length}개의 서지정보와 학술 주제를 정리한다. JSON을 사용하지 말고 반드시 지정된 줄 형식만 출력한다.\n특히 논문은 첫 페이지·초록·키워드에서 저자, 논문 제목, 발행연도, 주제를 적극적으로 찾아라. 저자를 찾을 수 없을 때만 AUTHOR를 비운다.\nDOCTYPE은 책 / 논문 / 학위논문 / 설교문 / 강의자료 / 보고서 / 자료 중 하나다.\nCATEGORY는 반드시 다음 중 하나: ${cats().join(' / ')}\nTOPICS는 2~6개의 짧은 학술 주제다. 기존 태그와 뜻이 같으면 우선 재사용한다: ${topTopics(50).join(', ')||'(없음)'}\nSUMMARY는 자료가 실제로 다루는 내용을 1~2문장으로 쓴다.\n\n${items.map((x,i)=>`<<ITEM:${i+1}>>\n파일명: ${x.e.name}\n경로: ${x.e.path||''}\n로컬 추정 종류: ${x.guess}\n앞부분/초록 후보:\n${x.first}`).join('\n\n')}\n\n출력 형식(각 값은 가능한 한 한 줄):\n<<ITEM:1>>\nTITLE=제목\nAUTHOR=저자명(여러 명이면 쉼표)\nYEAR=연도\nDOCTYPE=논문\nCATEGORY=분류명\nTOPICS=주제1 | 주제2 | 주제3\nSUMMARY=두 문장 이내\nTOC=확인되는 소제목1 | 소제목2\n<<END>>`;
   const raw=await ai(prompt,{tier:'fast',max:Math.min(7000,1100*items.length+1000)});const parsed=parseCardText(raw,items),C2=cats(),done=new Set();
-  for(const it of parsed){const x=items[it.i-1];if(!x)continue;const e=x.e,n=parseName(e.name);done.add(e);const ic=String(it.category||'').trim();const cat=C2.find(c=>c===ic)||C2.find(c=>ic&&(c.includes(ic)||ic.includes(c.split(' ')[0])))||e.cat||C2[C2.length-1];const author=n.author||it.author||e.author||'';Object.assign(e,{title:n.author?n.title:(it.title||e.title),author,year:String(it.year||e.year||''),docType:['책','논문','학위논문','설교문','강의자료','보고서','자료'].includes(it.docType)?it.docType:x.guess,summary:it.summary||e.summary||'(요약 없음)',toc:(it.toc||e.toc||[]).slice(0,10),topics:(it.topics&&it.topics.length?it.topics:(e.topics||[])).map(String).slice(0,6),cat,metaVersion:4,metaAI:1,localMeta:0,cardFail:0})}
+  for(const it of parsed){const x=items[it.i-1];if(!x)continue;const e=x.e,n=parseName(e.name);done.add(e);const ic=String(it.category||'').trim();const cat=C2.find(c=>c===ic)||C2.find(c=>ic&&(c.includes(ic)||ic.includes(c.split(' ')[0])))||e.cat||'';const author=n.author||it.author||e.author||'';Object.assign(e,{title:n.author?n.title:(it.title||e.title),author,year:String(it.year||e.year||''),docType:['책','논문','학위논문','설교문','강의자료','보고서','자료'].includes(it.docType)?it.docType:x.guess,summary:it.summary||e.summary||'(요약 없음)',toc:(it.toc||e.toc||[]).slice(0,10),topics:(it.topics&&it.topics.length?it.topics:(e.topics||[])).map(String).slice(0,6),cat,metaVersion:4,metaAI:1,localMeta:0,cardFail:0})}
   items.forEach(x=>{if(!done.has(x.e)){x.e.docType=x.e.docType||x.guess;x.e.cardFail=(x.e.cardFail||0)+1}});ixDirty()}
 async function autoCards(force){if(CARDING)return;const base=S.lib.filter(e=>e.status==='ok'&&(e.cardFail||0)<3);
   for(const e of base){if((e.metaVersion||0)<4||!e.docType||!e.cat||!e.summary)try{await localCardPrep(e)}catch(_e){}}
@@ -637,6 +637,36 @@ async function autoCards(force){if(CARDING)return;const base=S.lib.filter(e=>e.s
       S.cardMsg=`부족한 서지 · 주제만 AI 보완 중 ${Math.min(i+6,L.length)}/${L.length}`;paintCard();saveLib()}}
     finally{CARDING=false;S.cardMsg='';saveLib(true);ixDirty();render()}if(stop==='daily_limit')toast('오늘 AI 한도에 닿아 남은 자료는 다음에 이어서 정리합니다')}
   await tidyAll()}
+async function organizeUnclassified(){
+  if(CARDING){toast('자료 정리가 진행 중입니다');return}
+  const all=S.lib.filter(e=>e.status==='ok'&&!e.cat);
+  if(!all.length){toast('분류 전 자료가 없습니다');return}
+  CARDING=true;let localN=0,aiN=0,stop='';
+  try{
+    S.cardMsg=`분류 전 자료 로컬 정리 중 0/${all.length}`;paintCard();
+    for(let i=0;i<all.length;i++){
+      const e=all[i],before=e.cat||'';
+      try{await localCardPrep(e)}catch(_e){}
+      if(!before&&e.cat)localN++;
+      if(i%12===0||i===all.length-1){S.cardMsg=`분류 전 자료 로컬 정리 중 ${i+1}/${all.length}`;paintCard()}
+    }
+    saveLib(true);ixDirty();
+    let remain=S.lib.filter(e=>e.status==='ok'&&!e.cat&&(e.cardFail||0)<3);
+    if(remain.length&&(C.relayUrl||C.mediaUrl)){
+      for(let i=0;i<remain.length;i+=6){
+        const part=remain.slice(i,i+6);S.cardMsg=`남은 자료만 AI 분류 중 ${Math.min(i+6,remain.length)}/${remain.length}`;paintCard();
+        try{await bookCards(part);aiN+=part.filter(e=>!!e.cat).length}
+        catch(err){if(err&&['daily_limit','auth','noai','login'].includes(err.code)){stop=err.code;break}part.forEach(e=>e.cardFail=(e.cardFail||0)+1)}
+        saveLib();
+      }
+    }
+  }finally{
+    CARDING=false;S.cardMsg='';await saveLib(true);ixDirty();render()
+  }
+  const left=S.lib.filter(e=>e.status==='ok'&&!e.cat).length;
+  if(stop==='daily_limit')toast(`로컬 ${localN}개 정리 · AI 한도 도달 · ${left}개는 직접 분류 가능`);
+  else toast(`분류 완료 · 로컬 ${localN}개${aiN?` · AI ${aiN}개`:''}${left?` · 남은 ${left}개는 직접 분류`:''}`)
+}
 /* 올린 자료 정리: 분류 폴더로 옮기고 "[저자] 제목" 이름으로 (내 드라이브의 다른 원본은 건드리지 않음) */
 async function tidyOne(e){if(e.root!==S.F.up||!e.cat||e.tidied===e.cat)return;const fn=e.cat.replace(/[\\/]+/g,'·');const fid=await gFolder(fn,S.F.up);if(FMAP&&!FMAP[fid])FMAP[fid]={id:fid,name:fn,parents:[S.F.up]};
   const x=EXT(e.name);let nn=e.name;if(S.set.rename!==false&&e.title&&!parseName(e.name).author)nn=`${e.author?'['+e.author+'] ':''}${e.title}${x?'.'+x:''}`.replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,180);
@@ -857,14 +887,16 @@ function vManage(){const L=S.lib;const c=k=>L.filter(e=>e.status===k).length;con
    <div class="list">${S.set.libs.map(l=>`<div class="it"><span class="grow">📁 ${esc(l.name)}</span><button class="btn sm" data-a="libdel:${esc(l.id)}">빼기</button></div>`).join('')}<div class="it"><span class="grow">📁 올린 자료 <span class="note">(여기서 올린 파일 · 분류 폴더로 정리)</span></span><a class="btn sm" href="https://drive.google.com/drive/folders/${esc(S.F.up)}" target="_blank" rel="noopener">열기</a></div></div>
    <div class="row wrapx" style="margin-top:8px"><button class="btn sm" data-a="libadd">＋ 폴더 연결</button><span class="sp"></span><button class="btn sm pri" data-a="index" ${S.idx.run?'disabled':''}>새 자료 찾아 색인</button></div>
    <p class="note">사진 · 영상은 휴대폰 백업이 섞이지 않도록 폴더 연결이나 올리기로만 넣습니다.</p></div>
-  ${noCard&&!S.idx.run&&!CARDING?`<p class="note">AI 정리(서지 · 요약 · 주제 · 분류)가 아직 없는 자료 ${noCard}개 <button class="btn sm" data-a="cards">지금 정리하기 (AI 약 ${Math.ceil(noCard/4)}번)</button></p>`:''}
+  ${noCard&&!S.idx.run&&!CARDING?`<p class="note">서지 · 주제 정보가 부족한 자료 ${noCard}개 <button class="btn sm" data-a="cards">부족한 정보만 AI 보완</button></p>`:''}
+  ${ok.some(e=>!e.cat)&&!S.idx.run&&!CARDING?`<div class="card"><div class="row wrapx"><div class="grow"><b>분류 전 ${ok.filter(e=>!e.cat).length}개</b><div class="note">먼저 무료 로컬 규칙으로 분류하고, 남은 자료만 AI가 보완합니다. 그래도 애매하면 직접 분류할 수 있습니다.</div></div><button class="btn sm pri" data-a="classifyunassigned">분류 전 정리</button></div></div>`:''}
   <div class="tabs2">${['',...C2].filter(k=>!k||catN(k)).map(k=>`<button class="${cf===k?'on':''}" data-a="libc:${esc(k)}">${k?esc(k)+' '+catN(k):'모든 분류'}</button>`).join('')}${ok.some(e=>!e.cat)?`<button class="${cf==='_none'?'on':''}" data-a="libc:_none">분류 전 ${ok.filter(e=>!e.cat).length}</button>`:''}</div>
   <div class="tabs2">${F.map(x=>`<button class="${f===x?'on':''}" data-a="libf:${x}">${x}</button>`).join('')}</div><input type="search" id="libq" placeholder="제목 · 저자 · 폴더 · 주제로 찾기" value="${esc(S.libq)}">
   <div class="list">${rows||'<p class="empty">자료가 없습니다.</p>'}</div>${show.length>300?`<p class="note">처음 300개만 보입니다. 찾기나 분류로 좁혀 주세요.</p>`:''}`}
-function cardModal(e){modal(`<div class="row"><h2 class="grow" style="margin:0">자료 정보 고치기</h2><button class="btn sm" data-a="close">닫기</button></div><form id="f-card" data-id="${esc(e.id)}">
+function cardModal(e){modal(`<div class="row"><h2 class="grow" style="margin:0">자료 정보 · 분류 수정</h2><button class="btn sm" data-a="close">닫기</button></div><form id="f-card" data-id="${esc(e.id)}">
    <div class="field"><label for="c-title">제목</label><input type="text" id="c-title" value="${esc(e.title)}"></div>
    <div class="row wrapx"><div class="field grow"><label for="c-author">저자</label><input type="text" id="c-author" value="${esc(e.author||'')}"></div><div class="field" style="width:110px"><label for="c-year">연도</label><input type="text" id="c-year" value="${esc(e.year||'')}"></div></div>
-   <div class="field"><label for="c-cat">분류</label><select id="c-cat"><option value="">분류 전</option>${cats().map(c=>`<option ${e.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+   <div class="field"><label for="c-cat">분류</label><select id="c-cat"><option value="">분류 전</option>${cats().map(c=>`<option ${e.cat===c?'selected':''}>${esc(c)}</option>`).join('')}${e.cat&&!cats().includes(e.cat)?`<option selected>${esc(e.cat)}</option>`:''}</select></div>
+   <div class="field"><label for="c-newcat">새 분류 추가 <span class="note">(선택)</span></label><input type="text" id="c-newcat" placeholder="예: 변증 · 이단 연구"><div class="note">새 이름을 적으면 분류 목록에 추가하고 이 자료에 바로 적용합니다.</div></div>
    <div class="field"><label for="c-topics">주제 태그 <span class="note">(쉼표로)</span></label><input type="text" id="c-topics" value="${esc((e.topics||[]).join(', '))}"></div>
    <div class="field"><label for="c-sum">요약</label><textarea id="c-sum" rows="3">${esc(e.summary&&e.summary!=='(요약 없음)'?e.summary:'')}</textarea></div>
    <p class="note">📁 ${esc(e.path||'내 드라이브')}<br>${esc(e.name)}</p><button class="btn pri big">저장</button></form>`)}
@@ -928,7 +960,7 @@ function vLib(){const ok=S.lib.filter(e=>e.status==='ok');const by=S.lv.by||'cat
   const tabs=`<div class="bys">${BYS.map(([k,l])=>`<button class="${by===k?'on':''}" data-a="by:${k}">${l}</button>`).join('')}</div>`;
   if(key!=null&&by!=='recent'){const g=groupsOf(by).find(x=>x.k===key);const L=(g?g.L:[]).slice().sort((a,b)=>S.lv.sort==='new'?String(b.modified).localeCompare(String(a.modified)):(a.author||a.title).localeCompare(b.author||b.title,'ko'));
     return `<div class="crumb"><button class="btn sm" data-a="shelfback">‹ 전체 책장</button></div><h1>${esc(grpLabel(by,key))} <span class="cnt">${L.length}</span></h1>${head}
-     <div class="row wrapx" style="margin:6px 0 10px"><button class="btn sm pri" data-a="shelfmake">📝 이 책장으로 AI 정리</button><span class="sp"></span><button class="btn sm ${S.lv.sort!=='new'?'on2':''}" data-a="lsort:name">이름순</button><button class="btn sm ${S.lv.sort==='new'?'on2':''}" data-a="lsort:new">최근순</button></div>
+     <div class="row wrapx" style="margin:6px 0 10px">${by==='cat'&&key==='분류 전'?`<button class="btn sm pri" data-a="classifyunassigned">🧹 분류 전 정리</button>`:`<button class="btn sm pri" data-a="shelfmake">📝 이 책장으로 AI 정리</button>`}<span class="sp"></span><button class="btn sm ${S.lv.sort!=='new'?'on2':''}" data-a="lsort:name">이름순</button><button class="btn sm ${S.lv.sort==='new'?'on2':''}" data-a="lsort:new">최근순</button></div>
      <div class="books">${L.map(bookRow).join('')||'<p class="empty">자료가 없습니다.</p>'}</div>`}
   const chunks=ok.reduce((a,e)=>a+(e.chunks||0),0);
   const body=by==='recent'?`<div class="books">${ok.slice().sort((a,b)=>String(b.modified).localeCompare(String(a.modified))).slice(0,60).map(bookRow).join('')}</div>`
@@ -944,7 +976,7 @@ function bookModal(e){const a=amtOf(e),ty=typeOf({mimeType:e.mime,name:e.name}),
    ${(e.bk||[]).length?`<div class="kv"><b>성경</b><div>${e.bk.map(k=>chip('bible',k)).join('')}</div></div>`:''}
    ${e.author?`<div class="kv"><b>저자</b><div>${chip('author',e.author)}</div></div>`:''}
    ${(e.toc||[]).length?`<details><summary class="note">목차 ${e.toc.length}</summary><ol class="toc">${e.toc.map(t=>`<li>${esc(t)}</li>`).join('')}</ol></details>`:''}
-   <div class="row wrapx" style="margin-top:14px;gap:8px"><button class="btn sm pri" data-a="booksummary:${esc(e.id)}">${summaryMeta(e.id)?'📘 저장된 요약':'📘 전체 요약'}</button><button class="btn sm" data-a="mkfrom:${esc(e.id)}">AI 정리</button>${isMedia?`<button class="btn sm" data-a="mediaindex:${esc(e.id)}">${ty==='image'?'인식 내용':'자막 · 내용'}</button>`:''}</div>`)}
+   <div class="row wrapx" style="margin-top:14px;gap:8px"><button class="btn sm pri" data-a="booksummary:${esc(e.id)}">${summaryMeta(e.id)?'📘 저장된 요약':'📘 전체 요약'}</button><button class="btn sm" data-a="mkfrom:${esc(e.id)}">AI 정리</button><button class="btn sm" data-a="ecard:${esc(e.id)}">분류 수정</button>${isMedia?`<button class="btn sm" data-a="mediaindex:${esc(e.id)}">${ty==='image'?'인식 내용':'자막 · 내용'}</button>`:''}</div>`)}
 /* --- 결과 --- */
 function vDoc(){const d=S.doc;if(!d)return '<p class="empty">자료가 없습니다.</p>';const cb=n=>{const x=d.sources.find(s=>s.s===n);return x?`<button class="cite" data-a="src:${n}" title="${esc(citeOf(x)+' · '+(x.path||''))}">${esc(S.set.cite==='short'?x.title.slice(0,10):(x.author||x.title).slice(0,8))}${pg(x)?' '+esc(pg(x)):''}</button>`:''};
   const bib=docMd(d).split(/^## 참고문헌\s*$/m)[1]||'';const v=d.verify||{};
@@ -1143,6 +1175,7 @@ document.addEventListener('click',async ev=>{try{if(ev.target.closest('a[href]')
   if(a==='reidx'){const e=S.lib.find(x=>x.id===arg);if(e){e.status='wait';e.tries=0;runIndex([e])}return}
   if(a==='libf'){S.libf=arg;render();return}
   if(a==='cards'){autoCards(true);return}
+  if(a==='classifyunassigned'){const n=S.lib.filter(e=>e.status==='ok'&&!e.cat).length;if(!n){toast('분류 전 자료가 없습니다');return}if(!confirm(`분류 전 ${n}개를 정리할까요?\n먼저 무료 로컬 분류를 하고, 남은 자료만 AI로 보완합니다.`))return;organizeUnclassified();return}
   if(a==='idxstop'){S.idx.stop=true;toast('지금 자료까지 하고 멈춥니다');return}
   if(a==='driveall'){S.set.drive=arg||'pdf';await saveSet();render();runIndex();return}
   if(a==='libc'){S.libc=arg;render();return}
@@ -1216,8 +1249,8 @@ document.addEventListener('submit',async ev=>{const f=ev.target;ev.preventDefaul
   if(f.id==='f-q'){doSearch($('#q').value);return}
   if(f.id==='f-arcq'){S.arcq=$('#arcq').value.trim();S.arcKey='';render();return}
   if(f.id==='f-lq'){S.tab='search';await doSearch(S.libq);return}
-  if(f.id==='f-card'){const e=S.lib.find(x=>x.id===f.dataset.id);if(!e)return;const cat=$('#c-cat').value;Object.assign(e,{title:$('#c-title').value.trim()||e.title,author:$('#c-author').value.trim(),year:$('#c-year').value.trim(),topics:$('#c-topics').value.split(/[,·]/).map(x=>x.trim()).filter(Boolean),summary:$('#c-sum').value.trim()||e.summary||'(요약 없음)'});
-    if(cat!==(e.cat||'')){e.cat=cat;e.tidied=null}saveLib(true);ixDirty();closeModal();render();toast('저장했습니다');tidyAll();return}
+  if(f.id==='f-card'){const e=S.lib.find(x=>x.id===f.dataset.id);if(!e)return;let cat=$('#c-cat').value.trim(),newCat=$('#c-newcat')?$('#c-newcat').value.trim():'';if(newCat){const list=cats().slice();const same=list.find(c=>lc(c)===lc(newCat));cat=same||newCat;if(!same){S.set.cats=[...list,newCat];await saveSet()}}Object.assign(e,{title:$('#c-title').value.trim()||e.title,author:$('#c-author').value.trim(),year:$('#c-year').value.trim(),topics:$('#c-topics').value.split(/[,·]/).map(x=>x.trim()).filter(Boolean),summary:$('#c-sum').value.trim()||e.summary||'(요약 없음)'});
+    if(cat!==(e.cat||'')){e.cat=cat;e.tidied=null}saveLib(true);ixDirty();closeModal();render();toast(newCat?'새 분류를 추가하고 저장했습니다':'저장했습니다');tidyAll();return}
   if(f.id==='f-fq'){folderPicker($('#fq').value.trim());return}
   if(f.id==='f-rw'){const n=+f.dataset.n,h=$('#rwhow').value.trim();closeModal();rewriteSec(n,h);return}
   if(f.id==='f-clip'){const c=S.clips.find(x=>x.id===f.dataset.id);if(c){const tx=$('#clip-text').value.trim();if(!tx){toast('노트 내용은 비워 둘 수 없습니다');return}c.text=tx;c.memo=$('#clip-memo').value.trim();c.editedAt=new Date().toISOString();await saveClips();closeModal();render();toast('노트를 수정했습니다')}return}
