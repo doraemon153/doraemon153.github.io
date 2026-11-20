@@ -171,6 +171,31 @@ body.dragging::after{content:'여기에 놓으면 드라이브에 올리고 색�
 .reader-page-slot canvas{display:block;width:100%;height:auto;margin:0 auto}.reader-page-placeholder{width:100%;min-height:260px;display:flex;align-items:center;justify-content:center;color:#666b75;font-size:12px}
 .reader-continuous #readbox{border:0;background:#202124;padding:0}.reader-continuous .reader-page{opacity:.92}.reader-continuous .reader-swipe-hint{display:none}
 
+/* v22 · 기기별 독서 화면 최적화 */
+@media(max-width:699px){
+  .ov.reader{align-items:stretch;padding:0;background:#202124;overflow:hidden}
+  .ov.reader .sheet{width:100%;max-width:none;height:100dvh;max-height:none;border-radius:0;padding:10px 8px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;overflow:hidden}
+  .ov.reader .reader-scroll{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:0}
+  .ov.reader .readerbar{margin-bottom:7px;padding:0 2px}
+  .ov.reader .reader-title{font-size:17px}
+  .ov.reader .reader-page input{width:64px;padding:6px 5px}
+  .ov.reader .reader-swipe-hint{margin:0 0 6px;font-size:11px}
+  .ov.reader .reader-content{gap:10px;width:100%}
+  .ov.reader #readbox,.ov.reader #pvbox{width:100%;max-width:none;margin:0;overflow:hidden;border-radius:10px}
+  .ov.reader .pvbox canvas,.ov.reader .reader-page-slot canvas{display:block;width:100%!important;max-width:100%!important;height:auto!important;margin:0 auto}
+  .ov.reader .reader-side{padding:10px;border-radius:12px}
+  .ov.reader .reader-note-box textarea{min-height:108px}
+  .ov.reader .reader-text{max-height:42vh}
+  .ov.reader .row.wrapx{padding:0 2px;margin-top:8px!important}
+}
+@media(min-width:700px) and (max-width:1100px){
+  .ov.reader{padding:10px}
+  .ov.reader .sheet{width:calc(100% - 4px);height:calc(100dvh - 20px);padding:14px 14px}
+  .ov.reader .reader-content{grid-template-columns:minmax(0,1.68fr) minmax(300px,.72fr);gap:14px}
+  .ov.reader #readbox,.ov.reader #pvbox{max-width:none;width:100%}
+  .ov.reader .reader-side{max-height:calc(100dvh - 150px)}
+}
+
 @media(min-width:700px){
   .ov.reader{align-items:stretch;padding:16px}
   .ov.reader .sheet{width:min(1240px,100%);max-width:1240px;height:calc(100dvh - 32px);max-height:none;border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;overflow:hidden}
@@ -1016,6 +1041,35 @@ function pvMeta(){if(PV.meta)return PV.meta;const d=pvDocForPage(PV.page),x=d!=n
 async function pvSaveNote(needle=''){if(!PV)return;const e=pvMeta(),now=new Date().toISOString(),d=pvDocForPage(PV.page),x=d!=null&&IX.docs[d];const c={id:'c'+Date.now()+Math.random().toString(36).slice(2,6),at:now,day:now.slice(0,10),q:PV.q||S.q||'',fileId:PV.id,title:e.title||PV.title||'',author:e.author||PV.author||'',kind:kindOf(e)||PV.kind||'',cat:e.cat||PV.cat||'',topics:[...(e.topics||PV.topics||[])],bible:[...(e.bk||PV.bible||[])],path:e.path||PV.path||'',name:e.name||PV.name||e.title||'',p0:PV.page,p1:PV.page,u:'page',ty:PV.ty||'pdf',text:pvExcerpt(PV.pageText||((x&&x.text)||''),needle,PV.q||S.q),memo:''};await storeNote(c)}
 const READ_BG=[32,33,36],READ_INK=[236,236,231],READ_SCRIPT=[234,203,135],READ_Q=[131,217,208],READ_KEY=[255,170,133],READ_AUX=[182,184,242];
 function pdfDarkCanvas(cv){if(S.set.readerDark===false)return;try{const ctx=cv.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,cv.width,cv.height),d=im.data,bg=READ_BG,ink=READ_INK;for(let i=0;i<d.length;i+=4){const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),spread=mx-mn,lum=(.2126*r+.7152*g+.0722*b)/255;if(spread<34){const t=1-lum;d[i]=Math.round(bg[0]+(ink[0]-bg[0])*t);d[i+1]=Math.round(bg[1]+(ink[1]-bg[1])*t);d[i+2]=Math.round(bg[2]+(ink[2]-bg[2])*t)}else if(lum>.88){const k=Math.min(1,(lum-.88)/.12);d[i]=Math.round(r*(1-k)+bg[0]*k);d[i+1]=Math.round(g*(1-k)+bg[1]*k);d[i+2]=Math.round(b*(1-k)+bg[2]*k)}}ctx.putImageData(im,0,0)}catch(_e){}}
+
+function readerTrimCanvas(cv,page,tc){
+  // 폰/태블릿에서 본문 PDF의 큰 빈 가장자리만 제거해 글자는 키우되 화면 폭은 넘기지 않는다.
+  if(!cv||page<=1||!tc||!tc.items||tc.items.length<10||window.innerWidth>1100)return cv;
+  try{
+    const w=cv.width,h=cv.height;if(w<240||h<320)return cv;
+    const ctx=cv.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,w,h),d=im.data;
+    const px=(x,y)=>{const i=((y*w+x)<<2);return[d[i],d[i+1],d[i+2]]};
+    const pts=[[8,8],[w-9,8],[8,h-9],[w-9,h-9],[Math.round(w*.04),Math.round(h*.04)],[Math.round(w*.96),Math.round(h*.04)],[Math.round(w*.04),Math.round(h*.96)],[Math.round(w*.96),Math.round(h*.96)]];
+    const cs=pts.map(([x,y])=>px(Math.max(0,Math.min(w-1,x)),Math.max(0,Math.min(h-1,y))));
+    const bg=[0,1,2].map(k=>Math.round(cs.reduce((a,c)=>a+c[k],0)/cs.length));
+    const dist=(a,b)=>Math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2);
+    if(Math.max(...cs.map(c=>dist(c,bg)))>58)return cv; // 표지/사진처럼 가장자리가 복잡하면 보존
+    const step=Math.max(4,Math.round(Math.min(w,h)/260)),thr=42;
+    let minX=w,minY=h,maxX=-1,maxY=-1,hits=0;
+    for(let y=0;y<h;y+=step){for(let x=0;x<w;x+=step){const c=px(x,y);if(dist(c,bg)>thr){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;hits++}}}
+    if(hits<30||maxX<=minX||maxY<=minY)return cv;
+    const phone=window.innerWidth<700,padX=Math.round(w*(phone?.026:.035)),padY=Math.round(h*(phone?.018:.024));
+    let l=Math.max(0,minX-padX),r=Math.min(w,maxX+padX),t=Math.max(0,minY-padY),b=Math.min(h,maxY+padY);
+    // 세로는 과하게 자르지 않고, 가로 여백 중심으로 최적화한다.
+    t=Math.min(t,Math.round(h*.08));b=Math.max(b,Math.round(h*.92));
+    const leftRatio=l/w,rightRatio=(w-r)/w;
+    if(leftRatio<.035&&rightRatio<.035)return cv;
+    // 너무 좁게 잘리는 문서는 최소 72% 폭을 보존한다.
+    const minW=Math.round(w*.72);if(r-l<minW){const mid=(l+r)/2;l=Math.max(0,Math.round(mid-minW/2));r=Math.min(w,l+minW);l=Math.max(0,r-minW)}
+    const out=document.createElement('canvas');out.width=Math.max(1,r-l);out.height=Math.max(1,b-t);out.style.width='100%';out.style.height='auto';
+    out.getContext('2d').drawImage(cv,l,t,r-l,b-t,0,0,r-l,b-t);return out;
+  }catch(_e){return cv}
+}
 function readerBlocks(tc){let lines=[],cur='';for(const it of tc.items||[]){const t=String(it.str||'').replace(/\s+/g,' ').trim();if(t)cur+=(cur?' ':'')+t;if(it.hasEOL&&cur){lines.push(cur.trim());cur=''}}if(cur.trim())lines.push(cur.trim());const out=[];let buf='';for(const line of lines){if(!line)continue;const heading=line.length<36&&!/[.!?。다요]$/.test(line);if(heading){if(buf){out.push(buf.trim());buf=''}out.push(line);continue}buf+=(buf?' ':'')+line;if(buf.length>220||/[.!?。]$/.test(line)){out.push(buf.trim());buf=''}}if(buf)out.push(buf.trim());return out.filter(x=>x.length>1)}
 function readBlockClass(t,i){if(t.length<36&&!/[.!?。]$/.test(t))return 'heading';if(/[?？]$/.test(t))return 'question';if(i===0||/(핵심|결론|중요|그러므로|따라서)/.test(t.slice(0,45)))return 'key';return ''}
 function readerSelectedNative(){const el=$('#readtext'),sel=window.getSelection&&window.getSelection();if(!el||!sel||sel.rangeCount<1||sel.isCollapsed)return '';const r=sel.getRangeAt(0),node=r.commonAncestorContainer,n=node.nodeType===1?node:node.parentNode;if(!el.contains(n))return '';const b=n.closest&&n.closest('.read-block');if(READER)READER.nativeIndex=b?+b.dataset.a.split(':')[1]:null;return sel.toString().replace(/\s+/g,' ').trim()}
@@ -1112,7 +1166,7 @@ async function readerContinuousRender(page){
   slot.dataset.busy='1';
   try{
     const p=await READER.doc.getPage(page),tc=await p.getTextContent(),w=Math.min(slot.clientWidth||760,1180),v0=p.getViewport({scale:1}),dpr=Math.min(1.6,window.devicePixelRatio||1),vp=p.getViewport({scale:w/v0.width*dpr}),cv=document.createElement('canvas');
-    cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);cv.style.width='100%';await p.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;pdfDarkCanvas(cv);slot.innerHTML='';slot.appendChild(cv);slot.dataset.rendered='1';
+    cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);cv.style.width='100%';await p.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;const shown=readerTrimCanvas(cv,page,tc);pdfDarkCanvas(shown);slot.innerHTML='';slot.appendChild(shown);slot.dataset.rendered='1';
     const blocks=readerBlocks(tc);READER.textByPage.set(page,blocks);p.cleanup();
   }catch(_e){slot.innerHTML='<div class="reader-page-placeholder">이 페이지를 표시하지 못했습니다.</div>'}
   finally{slot.dataset.busy='0'}
@@ -1149,7 +1203,7 @@ async function readerOpen(e,page=1){const ty=typeOf({mimeType:e.mime,name:e.name
     await readerNativeOpen(e,ty,err);
   }
 }
-async function readerDraw(){if(!READER)return;if(readerFlow()==='scroll'&&READER.doc){if(!document.querySelector('.reader-page-stack'))await readerContinuousStart();else readerContinuousJump(READER.page);return}const box=$('#readbox');if(!box||!READER.doc)return;const p=await READER.doc.getPage(READER.page),tc=await p.getTextContent(),w=Math.min(box.clientWidth||760,1180),v0=p.getViewport({scale:1}),dpr=Math.min(2,window.devicePixelRatio||1),vp=p.getViewport({scale:w/v0.width*dpr}),cv=document.createElement('canvas');cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);cv.style.width='100%';await p.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;pdfDarkCanvas(cv);box.innerHTML='';box.appendChild(cv);READER.blocks=readerBlocks(tc);if(!READER.blocks.length)READER.blocks=await readerFallbackPageText(READER.e,READER.page);readerPaintText(READER.blocks);readerSetTop(READER.page,READER.doc.numPages);p.cleanup()}
+async function readerDraw(){if(!READER)return;if(readerFlow()==='scroll'&&READER.doc){if(!document.querySelector('.reader-page-stack'))await readerContinuousStart();else readerContinuousJump(READER.page);return}const box=$('#readbox');if(!box||!READER.doc)return;const p=await READER.doc.getPage(READER.page),tc=await p.getTextContent(),w=Math.min(box.clientWidth||760,1180),v0=p.getViewport({scale:1}),dpr=Math.min(2,window.devicePixelRatio||1),vp=p.getViewport({scale:w/v0.width*dpr}),cv=document.createElement('canvas');cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);cv.style.width='100%';await p.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;const shown=readerTrimCanvas(cv,READER.page,tc);pdfDarkCanvas(shown);box.innerHTML='';box.appendChild(shown);READER.blocks=readerBlocks(tc);if(!READER.blocks.length)READER.blocks=await readerFallbackPageText(READER.e,READER.page);readerPaintText(READER.blocks);readerSetTop(READER.page,READER.doc.numPages);p.cleanup()}
 async function textReaderOpen(e,page=1){const ch=await chunksOf(e);if(!ch.length){window.open(gView(e.id),'_blank');return}const blocks=[];for(const c of ch){for(const t of String(c.text||'').split(/\n{2,}|(?<=[.!?。])\s+/).map(x=>x.replace(/\s+/g,' ').trim()).filter(x=>x.length>2))blocks.push({text:t,p0:c.p0||0,p1:c.p1||c.p0||0,u:e.unit||c.u||'none'})}READER={e,ty:typeOf({mimeType:e.mime,name:e.name}),doc:null,page:Math.max(1,+page||1),unit:e.unit||'none',blocks:blocks.map(x=>x.text),blockMeta:blocks,pick:new Set()};modal(`<div class="readerbar"><b class="reader-title">${esc(e.title)}</b><button class="btn sm" data-a="close">닫기</button></div><div class="reader-scroll"><div class="text-reader"><div class="reader-side" style="position:static;max-height:none"><div class="reader-side-head"><span>본문</span><span class="sp"></span><span class="note" id="readpicked"></span></div><div id="readtext" class="reader-text" style="max-height:none">${blocks.map((b,i)=>`<div class="read-block ${readBlockClass(b.text,i)}" role="button" tabindex="0" data-a="readpick:${i}">${b.p0?`<span class="read-loc">${esc(unitLbl(b.u,b.p0,b.p1))}</span><br>`:''}${esc(b.text)}</div>`).join('')}</div><div class="reader-savebar"><button class="btn pri" data-a="readsave">노트에 저장</button></div></div></div></div><div class="row wrapx" style="margin-top:10px"><a class="btn sm" href="${gView(e.id)}" target="_blank" rel="noopener">원본 ↗</a>${summaryMeta(e.id)?`<button class="btn sm pri" data-a="summaryopen:${esc(e.id)}">요약</button>`:`<button class="btn sm" data-a="booksummary:${esc(e.id)}">요약</button>`}</div>`,'reader reader-palette');}
 async function readerSaveSelection(){if(!READER)return;const native=readerSelectedNative();if(native){let pg0=READER.page,u=READER.unit||'page';if(!READER.doc&&READER.blockMeta){const i=Number.isInteger(READER.nativeIndex)?READER.nativeIndex:[...(READER.pick||[])][0],m=READER.blockMeta[i];if(m){pg0=m.p0||0;u=m.u||u}}return readerStoreText(native,pg0,u)}const idx=[...(READER.pick||[])].sort((a,b)=>a-b);if(!idx.length){toast('저장할 문장을 누르거나 드래그해 선택해 주세요');return}const text=idx.map(i=>(READER.blocks||[])[i]).filter(Boolean).join(' ');let pg0=READER.page,u=READER.unit||'page';if(!READER.doc&&READER.blockMeta){const m=READER.blockMeta[idx[0]];if(m){pg0=m.p0||0;u=m.u||u}}return readerStoreText(text,pg0,u)}
 async function readerSaveMemo(){
