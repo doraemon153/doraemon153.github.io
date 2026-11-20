@@ -86,7 +86,7 @@ body.dragging::after{content:'여기에 놓으면 드라이브에 올리고 색�
 /* background AI jobs */
 .bg-jobs{margin:14px 0;display:grid;gap:8px}.bg-job{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:11px 12px}.bg-job-top{display:flex;align-items:center;gap:8px}.bg-job .bar{margin:8px 0 5px}.bg-job small{color:var(--ink2)}.bg-job.done{border-color:color-mix(in srgb,var(--good) 40%,var(--line))}.bg-job.fail{border-color:color-mix(in srgb,var(--bad) 42%,var(--line))}.summary-actions{display:flex;gap:8px;flex-wrap:wrap;padding:10px 0 12px;border-bottom:1px solid var(--line);margin-bottom:12px;position:sticky;top:0;background:var(--bg);z-index:3}.summary-actions .btn{min-width:110px}.queued-note{border:1px solid color-mix(in srgb,var(--brand) 45%,var(--line));background:color-mix(in srgb,var(--brand) 8%,var(--panel));border-radius:13px;padding:12px;margin:10px 0}.summary-cover.fallback{background:linear-gradient(150deg,color-mix(in srgb,var(--brand) 32%,var(--panel2)),color-mix(in srgb,var(--warn) 14%,var(--panel2)));position:relative;overflow:hidden}.summary-cover.fallback:before{content:'📘';position:absolute;right:10px;top:8px;font-size:28px;opacity:.8}.sumcover-mini.fallback{background:linear-gradient(150deg,color-mix(in srgb,var(--brand) 32%,var(--panel2)),color-mix(in srgb,var(--warn) 14%,var(--panel2)))}
 .idea-file-row{display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px;align-items:center;margin-top:10px}.idea-file-btn{width:112px}.idea-file-meta{min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--mute);font-size:13px;line-height:1.45}.idea-file-meta small{font-size:12px;color:var(--mute)}.idea-file-name{overflow-wrap:anywhere;min-width:0}.idea-file-meta .btn{flex:none}@media(max-width:430px){.idea-file-row{grid-template-columns:104px minmax(0,1fr);gap:10px}.idea-file-btn{width:104px;padding-left:10px;padding-right:10px}}
-</style>
+.reader-drive-fallback{display:flex;flex-direction:column;width:100%;height:100%;min-height:72vh}.reader-drive-frame{width:100%;flex:1;min-height:68vh;border:0;border-radius:14px;background:#17191d}.reader-fallback-note{font-size:12px;color:var(--mute);padding:8px 4px 0;line-height:1.5}@media(max-width:699px){.reader-drive-fallback{min-height:64vh}.reader-drive-frame{min-height:60vh}}</style>
 <style>
 /* iPad 연구 작업 최적화 */
 .archive-tools{display:flex;gap:7px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}.archive-tools::-webkit-scrollbar{display:none}.archive-tools .btn{flex:none}
@@ -193,7 +193,7 @@ body.dragging::after{content:'여기에 놓으면 드라이브에 올리고 색�
 <div id="app"></div><div id="modal"></div><div id="toast"></div><div id="print"></div>
 <script>
 (()=>{'use strict';
-const C=window.LX_CONFIG||{};const KEY='lectio',BUILD='v18 · PDF reader/notes';
+const C=window.LX_CONFIG||{};const KEY='lectio',BUILD='v19 · PDF reader/notes';
 const DAPI='https://www.googleapis.com/drive/v3/files',FOLD='application/vnd.google-apps.folder';
 const GSC='openid email profile https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file';
 const $=s=>document.querySelector(s);
@@ -1056,9 +1056,16 @@ async function readerOpen(e,page=1){const ty=typeOf({mimeType:e.mime,name:e.name
   try{
     const opened=await readerPdfLoad(e,ty,L);READER.task=opened.task;READER.doc=opened.doc;READER.loadMode=opened.mode;READER.page=Math.min(READER.page,opened.doc.numPages);await readerDraw();
   }catch(err){
-    const b=$('#readbox');if(b)b.innerHTML='<div class="reader-loadstate"><b>PDF 화면을 불러오지 못했습니다.</b><br>오른쪽에는 색인된 본문과 노트를 계속 사용할 수 있습니다. 필요하면 아래 원본 버튼으로 열어 주세요.</div>';
+    // iPad/Safari에서 큰 PDF를 PDF.js로 읽지 못하면 Google Drive 내장 미리보기로 자동 전환한다.
+    const b=$('#readbox');
+    if(b){
+      const src=`https://drive.google.com/file/d/${encodeURIComponent(e.id)}/preview`;
+      b.innerHTML=`<div class="reader-drive-fallback"><iframe class="reader-drive-frame" src="${src}" title="${esc(e.title)} PDF" allow="fullscreen"></iframe><div class="reader-fallback-note">앱 PDF 엔진 대신 Google Drive 뷰어로 열었습니다. 오른쪽 독서 노트와 색인 본문은 그대로 사용할 수 있습니다.</div></div>`;
+    }
+    READER.loadMode='drive-preview';
     const blocks=await readerFallbackPageText(e,READER.page);readerPaintText(blocks);
     const input=$('#readpage'),tot=$('#readtotal');if(input)input.value=READER.page;if(tot)tot.textContent=e.pages?`/ ${e.pages}`:'';
+    const pr=$('#readprev'),nx=$('#readnext');if(pr)pr.disabled=true;if(nx)nx.disabled=true;
   }
 }
 async function readerDraw(){const box=$('#readbox');if(!box||!READER||!READER.doc)return;const p=await READER.doc.getPage(READER.page),tc=await p.getTextContent(),w=Math.min(box.clientWidth||760,1180),v0=p.getViewport({scale:1}),dpr=Math.min(2,window.devicePixelRatio||1),vp=p.getViewport({scale:w/v0.width*dpr}),cv=document.createElement('canvas');cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);cv.style.width='100%';await p.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;pdfDarkCanvas(cv);box.innerHTML='';box.appendChild(cv);READER.blocks=readerBlocks(tc);if(!READER.blocks.length)READER.blocks=await readerFallbackPageText(READER.e,READER.page);readerPaintText(READER.blocks);const input=$('#readpage'),tot=$('#readtotal'),pr=$('#readprev'),nx=$('#readnext');if(input)input.value=READER.page;if(tot)tot.textContent=`/ ${READER.doc.numPages}`;if(pr)pr.disabled=READER.page<=1;if(nx)nx.disabled=READER.page>=READER.doc.numPages;p.cleanup()}
